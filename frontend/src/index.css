@@ -1,0 +1,59 @@
+/* Import the 'Inter' font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    /* Base dark background */
+    background-color: #0f172a; /* bg-primary */
+    color: #f1f5f9; /* text-secondary */
+    
+    /* Center everything for a clean layout */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden; /* Prevents scrollbars from gradient overflow */
+  }
+
+  /* This is the "AI-Era" background.
+    We create a fixed pseudo-element behind all content
+    and apply our animated aurora gradients to it.
+  */
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -2; /* Sits behind everything */
+    background-color: #0f172a; /* slate-900 */
+  }
+  
+  body::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 200vw; /* Make it huge to move around */
+    height: 200vh;
+    top: -50%;
+    left: -50%;
+    z-index: -1; /* Sits behind content, on top of bg */
+    
+    /* The animated gradients */
+    background-image: 
+      radial-gradient(circle at 20% 20%, #4f46e5, transparent 30%),
+      radial-gradient(circle at 80% 70%, #7c3aed, transparent 30%);
+    
+    background-size: 50% 50%;
+    background-repeat: no-repeat;
+    
+    /* Apply the animations */
+    animation: aurora-fg 20s linear infinite;
+  }
+}
