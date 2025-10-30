@@ -12,38 +12,42 @@ const LoadingSpinner = () => (
 )
 
 // Re-usable Doughnut Chart Component
-const DoughnutChart = ({ score, title, size = 100, strokeWidth = 10, color = 'var(--accent-primary)' }) => {
+const DoughnutChart = ({ score, title, size = 100, strokeWidth = 10, color = '#3b82f6' }) => {
   const radius = (size - strokeWidth) / 2
   const circumference = radius * 2 * Math.PI
 
   return (
     <div className="relative flex flex-col items-center justify-center" style={{ width: size, height: size }}>
       <svg className="absolute" width={size} height={size}>
+        {/* Background circle */}
         <circle
-          stroke="#404040" // Background stroke color
+          stroke="#374151"
           fill="transparent"
           strokeWidth={strokeWidth}
           r={radius}
           cx={size / 2}
           cy={size / 2}
         />
+        {/* Progress circle */}
         <motion.circle
           stroke={color}
           fill="transparent"
           strokeWidth={strokeWidth}
-          strokeDasharray={circumference + ' ' + circumference}
+          strokeDasharray={`${circumference} ${circumference}`}
           strokeLinecap="round"
           r={radius}
           cx={size / 2}
           cy={size / 2}
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
           initial={{ strokeDashoffset: circumference }}
-          animate={{ strokeDashoffset: circumference - (score / 100) * circumference }}
+          animate={{ 
+            strokeDashoffset: circumference - (score / 100) * circumference 
+          }}
           transition={{ duration: 1.5, ease: "easeOut" }}
         />
       </svg>
       <div className="absolute text-center">
-        <span className="text-xl font-bold text-text-primary">{score}</span>
+        <span className="text-lg font-bold text-text-primary">{score}</span>
       </div>
     </div>
   )
@@ -172,7 +176,7 @@ export default function DashboardPage() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-4xl mx-auto p-6 sm:p-8 space-y-8
+        className="w-full max-w-3xl mx-auto p-4 sm:p-6 space-y-6
                    rounded-2xl border border-white/10 
                    bg-white/5 backdrop-blur-lg shadow-2xl"
       >
@@ -198,38 +202,38 @@ export default function DashboardPage() {
         </div>
 
         {/* --- Overall Show-off Score --- */}
-        <div className="text-center space-y-4">
-          <h2 className="text-2xl font-semibold text-text-primary">Overall Show-off Score</h2>
+        <div className="text-center space-y-3">
+          <h2 className="text-xl font-semibold text-text-primary">Overall Show-off Score</h2>
           <div className="flex justify-center">
             <DoughnutChart 
               score={profile.showoff_score} 
               title="Overall" 
-              size={180} 
-              strokeWidth={15} 
-              color='var(--accent-primary)' 
+              size={140} 
+              strokeWidth={12} 
+              color='#3b82f6' 
             />
           </div>
-          <p className="text-lg text-text-muted">{profile.showoff_score} / 100</p>
+          <p className="text-base text-text-muted">{profile.showoff_score} / 100</p>
         </div>
 
         {/* --- Individual Score Cards --- */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Resume Score */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.5 }}
-            className="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col items-center space-y-3"
+            className="p-3 rounded-xl bg-white/5 border border-white/10 flex flex-col items-center space-y-2"
           >
-            <h3 className="text-lg font-semibold text-text-primary">Resume Score</h3>
+            <h3 className="text-base font-semibold text-text-primary">Resume Score</h3>
             <DoughnutChart 
               score={profile.resume_score} 
               title="Resume" 
-              size={120} 
-              strokeWidth={12} 
-              color='var(--accent-orange)' 
+              size={100} 
+              strokeWidth={10} 
+              color='#f59e0b' 
             />
-            <p className="text-md text-text-muted">{profile.resume_score} / 100</p>
+            <p className="text-sm text-text-muted">{profile.resume_score} / 100</p>
           </motion.div>
 
           {/* GitHub Score */}
@@ -237,17 +241,17 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.5 }}
-            className="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col items-center space-y-3"
+            className="p-3 rounded-xl bg-white/5 border border-white/10 flex flex-col items-center space-y-2"
           >
-            <h3 className="text-lg font-semibold text-text-primary">GitHub Score</h3>
+            <h3 className="text-base font-semibold text-text-primary">GitHub Score</h3>
             <DoughnutChart 
               score={profile.github_score} 
               title="GitHub" 
-              size={120} 
-              strokeWidth={12} 
-              color='var(--accent-green)' 
+              size={100} 
+              strokeWidth={10} 
+              color='#10b981' 
             />
-            <p className="text-md text-text-muted">{profile.github_score} / 100</p>
+            <p className="text-sm text-text-muted">{profile.github_score} / 100</p>
           </motion.div>
 
           {/* Coding Platform Score (Placeholder) */}
@@ -255,18 +259,18 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.5 }}
-            className="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col items-center space-y-3"
+            className="p-3 rounded-xl bg-white/5 border border-white/10 flex flex-col items-center space-y-2"
           >
-            <h3 className="text-lg font-semibold text-text-primary">Coding Platform Score</h3>
+            <h3 className="text-base font-semibold text-text-primary">Coding Platform Score</h3>
             {/* Placeholder value for now */}
             <DoughnutChart 
               score={75} // Static 75 for now as we don't have this
               title="Platform" 
-              size={120} 
-              strokeWidth={12} 
-              color='var(--accent-blue)' 
+              size={100} 
+              strokeWidth={10} 
+              color='#3b82f6' 
             />
-            <p className="text-md text-text-muted">75 / 100</p>
+            <p className="text-sm text-text-muted">75 / 100</p>
           </motion.div>
         </div>
 
@@ -275,7 +279,7 @@ export default function DashboardPage() {
           onClick={() => navigate('/leaderboard')}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="w-full py-3 px-4 rounded-lg shadow-sm text-lg font-medium 
+          className="w-full py-2 px-4 rounded-lg shadow-sm text-base font-medium 
                      text-white bg-accent-primary hover:bg-accent-hover
                      focus:outline-none focus:ring-2 focus:ring-offset-2 
                      focus:ring-offset-bg-primary focus:ring-accent-focus
@@ -289,27 +293,27 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8, duration: 0.5 }}
-          className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between"
+          className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between"
         >
           <div>
-            <h3 className="text-lg font-semibold text-text-primary">Join the Talent Pool</h3>
-            <p className="text-sm text-text-muted">
+            <h3 className="text-base font-semibold text-text-primary">Join the Talent Pool</h3>
+            <p className="text-xs text-text-muted">
               Allow companies to discover your profile for job opportunities.
             </p>
           </div>
           <button
             onClick={handleB2bOptInToggle}
             disabled={isUpdatingOptIn}
-            className={`relative inline-flex flex-shrink-0 h-7 w-14 border-2 rounded-full cursor-pointer 
+            className={`relative inline-flex flex-shrink-0 h-6 w-12 border-2 rounded-full cursor-pointer 
                         transition-colors ease-in-out duration-200 focus:outline-none 
                         ${b2bOptIn ? 'bg-accent-green border-accent-green' : 'bg-gray-700 border-gray-600'}`}
           >
             <span className="sr-only">Toggle B2B Opt-in</span>
             <span
               aria-hidden="true"
-              className={`pointer-events-none inline-block h-6 w-6 rounded-full bg-white shadow 
+              className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow 
                           transform ring-0 transition ease-in-out duration-200 
-                          ${b2bOptIn ? 'translate-x-7' : 'translate-x-0'}`}
+                          ${b2bOptIn ? 'translate-x-6' : 'translate-x-0'}`}
             />
           </button>
         </motion.div>
