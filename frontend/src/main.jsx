@@ -4,9 +4,10 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import App from './App.jsx'
 import './index.css'
 
-// Import our two new, independent pages
+// Import our pages
 import UploadPage from './pages/UploadPage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
+import LeaderboardPage from './pages/LeaderboardPage.jsx' // 1. Import new page
 
 const router = createBrowserRouter([
   {
@@ -21,7 +22,10 @@ const router = createBrowserRouter([
     path: '/dashboard',
     element: <DashboardPage />, // Pratham's dashboard
   },
-  // We will add '/leaderboard' here later
+  {
+    path: '/leaderboard', // 2. Add new route
+    element: <LeaderboardPage />,
+  },
 ])
 
 ReactDOM.createRoot(document.getElementById('root')).render(
