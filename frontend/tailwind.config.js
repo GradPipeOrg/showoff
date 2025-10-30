@@ -27,6 +27,13 @@ export default {
         'accent-hover': '#4338ca',     // indigo-700
         'accent-focus': '#6366f1',     // indigo-500
         'accent-violet': '#7c3aed',     // violet-600
+        'accent-green': '#10b981',     // emerald-500
+        'accent-orange': '#f59e0b',    // amber-500
+        'accent-blue': '#3b82f6',      // blue-500
+      },
+      screens: {
+        'xs': '475px',
+        '3xl': '1600px',
       },
       fontFamily: {
         sans: ['Inter', ...fontFamily.sans],
