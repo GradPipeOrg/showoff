@@ -122,41 +122,41 @@ export default function UploadPage() {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="w-full max-w-lg mx-auto p-6 sm:p-8 space-y-6
+      className="w-full max-w-xs sm:max-w-md md:max-w-lg mx-auto p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6
                  rounded-2xl border border-white/10 
-                 bg-white/5 backdrop-blur-lg shadow-2xl"
+                 bg-white/5 backdrop-blur-lg shadow-2xl mt-16 sm:mt-0"
     >
       <div className="text-center">
-        <h1 className="text-3xl sm:text-4xl font-bold text-text-primary mb-2">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-text-primary mb-2 leading-tight">
           Generate Your Score
         </h1>
-        <p className="text-base sm:text-lg text-text-muted">
+        <p className="text-sm sm:text-base md:text-lg text-text-muted leading-relaxed">
           Upload your data to get on the leaderboard.
         </p>
       </div>
 
-        <form className="space-y-6" onSubmit={handleRankProfile}>
+        <form className="space-y-4 sm:space-y-6" onSubmit={handleRankProfile}>
           
           {/* 1. Resume Upload */}
           <div>
-            <label className="block text-sm font-medium text-text-muted mb-2 text-left">
+            <label className="block text-xs sm:text-sm font-medium text-text-muted mb-2 text-left">
               Upload your Resume (PDF only)
             </label>
             <div
               className={`relative flex flex-col items-center justify-center 
-                          w-full h-40 px-6 pt-5 pb-6 
+                          w-full h-32 sm:h-40 px-4 sm:px-6 pt-4 sm:pt-5 pb-4 sm:pb-6 
                           border-2 border-dashed rounded-lg
                           transition-colors
                           ${resumeFile ? 'border-accent-focus' : 'border-white/20 hover:border-white/40'}`}
             >
               <div className="space-y-1 text-center">
-                <UploadCloud className="mx-auto h-10 w-10 text-text-subtle" />
-                <div className="flex text-sm text-text-subtle">
+                <UploadCloud className="mx-auto h-8 w-8 sm:h-10 sm:w-10 text-text-subtle" />
+                <div className="flex flex-col sm:flex-row text-xs sm:text-sm text-text-subtle">
                   <span className="font-medium text-accent-focus">Upload a file</span>
-                  <p className="pl-1">or drag and drop</p>
+                  <p className="sm:pl-1">or drag and drop</p>
                 </div>
                 {resumeFile ? (
-                  <p className="text-sm text-green-400 font-medium pt-2">{resumeFile.name}</p>
+                  <p className="text-xs sm:text-sm text-green-400 font-medium pt-1 sm:pt-2 break-all">{resumeFile.name}</p>
                 ) : (
                   <p className="text-xs text-text-subtle">PDF up to 10MB</p>
                 )}
@@ -175,19 +175,19 @@ export default function UploadPage() {
 
           {/* 2. GitHub Username */}
           <div>
-            <label htmlFor="github" className="block text-sm font-medium text-text-muted mb-2 text-left">
+            <label htmlFor="github" className="block text-xs sm:text-sm font-medium text-text-muted mb-2 text-left">
               Your GitHub Username
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Github className="h-5 w-5 text-text-subtle" />
+                <Github className="h-4 w-4 sm:h-5 sm:w-5 text-text-subtle" />
               </div>
               <input
                 type="text"
                 name="github"
                 id="github"
-                className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 
-                           rounded-lg text-text-secondary placeholder-text-subtle 
+                className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 bg-white/5 border border-white/10 
+                           rounded-lg text-sm sm:text-base text-text-secondary placeholder-text-subtle 
                            focus:outline-none focus:ring-2 
                            focus:ring-accent-focus focus:border-accent-focus"
                 placeholder="e.g., m-shabir"
@@ -204,7 +204,7 @@ export default function UploadPage() {
             whileTap={{ scale: 0.98 }}
             type="submit"
             disabled={loading}
-            className="w-full py-3 px-4 rounded-lg shadow-sm text-lg font-medium 
+            className="w-full py-2.5 sm:py-3 px-4 rounded-lg shadow-sm text-base sm:text-lg font-medium 
                        text-white bg-accent-primary hover:bg-accent-hover
                        focus:outline-none focus:ring-2 focus:ring-offset-2 
                        focus:ring-offset-bg-primary focus:ring-accent-focus

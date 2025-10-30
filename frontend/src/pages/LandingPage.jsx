@@ -44,21 +44,21 @@ export default function LandingPage({ session, profile }) {
   return (
     <>
       {/* --- Universal Header --- */}
-      <header className="absolute top-0 left-0 right-0 p-4 sm:p-6 flex justify-between items-center">
-        <h1 className="text-xl font-bold text-text-primary">GradPipe Showoff</h1>
+      <header className="absolute top-0 left-0 right-0 p-3 sm:p-4 md:p-6 flex justify-between items-center z-10">
+        <h1 className="text-lg sm:text-xl font-bold text-text-primary">GradPipe Showoff</h1>
         {session && (
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleSignOut}
-            className="flex items-center gap-2 px-3 py-2 
-                       rounded-lg text-sm font-medium 
+            className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 
+                       rounded-lg text-xs sm:text-sm font-medium 
                        text-text-muted bg-white/5 border border-white/10
                        hover:text-text-primary hover:bg-white/10
                        transition-colors"
           >
-            <LogOut size={16} />
-            Sign Out
+            <LogOut size={14} className="sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">Sign Out</span>
           </motion.button>
         )}
       </header>
@@ -69,17 +69,17 @@ export default function LandingPage({ session, profile }) {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: "easeInOut" }}
-        className="w-full max-w-2xl mx-auto p-6 sm:p-8 text-center
+        className="w-full max-w-xs sm:max-w-md md:max-w-2xl mx-auto p-4 sm:p-6 md:p-8 text-center
                    rounded-2xl border border-white/10 
-                   bg-white/5 backdrop-blur-lg shadow-2xl"
+                   bg-white/5 backdrop-blur-lg shadow-2xl mt-16 sm:mt-0"
       >
         {/* --- STATE 1: Logged-Out Hook --- */}
         {isLoggedOut && (
-          <div className="space-y-6">
-            <h2 className="text-4xl sm:text-5xl font-bold text-text-primary">
+          <div className="space-y-4 sm:space-y-6">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-text-primary leading-tight">
               Stop Applying. Get Discovered.
             </h2>
-            <p className="text-lg sm:text-xl text-text-muted">
+            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-text-muted leading-relaxed">
               Get an AI-powered "Show-off Score" for your profile and let top companies find you.
             </p>
             <motion.button
@@ -87,11 +87,11 @@ export default function LandingPage({ session, profile }) {
               whileTap={{ scale: 0.98 }}
               onClick={handleGoogleLogin}
               disabled={loading}
-              className="w-full sm:w-auto px-8 py-3 rounded-lg shadow-sm 
-                         font-medium text-lg text-white bg-accent-primary 
+              className="w-full sm:w-auto px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg shadow-sm 
+                         font-medium text-base sm:text-lg text-white bg-accent-primary 
                          hover:bg-accent-hover transition-all"
             >
-              <span className="flex items-center justify-center gap-3">
+              <span className="flex items-center justify-center gap-2 sm:gap-3">
                 <GoogleIcon />
                 Join with Google
               </span>
@@ -101,23 +101,23 @@ export default function LandingPage({ session, profile }) {
 
         {/* --- STATE 2: Onboarding Nudge --- */}
         {isOnboarding && (
-          <div className="space-y-6">
-            <h2 className="text-4xl sm:text-5xl font-bold text-text-primary">
+          <div className="space-y-4 sm:space-y-6">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-text-primary leading-tight">
               One Last Step, {userName}
             </h2>
-            <p className="text-lg sm:text-xl text-text-muted">
+            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-text-muted leading-relaxed">
               You're in. Now, generate your "Show-off Score" to get on the leaderboard.
             </p>
             <motion.button
               whileHover={{ scale: 1.02, boxShadow: '0 0 20px rgba(79, 70, 229, 0.5)' }}
               whileTap={{ scale: 0.98 }}
               onClick={() => navigate('/upload')}
-              className="w-full sm:w-auto px-8 py-3 rounded-lg shadow-sm 
-                         font-medium text-lg text-white bg-accent-primary 
+              className="w-full sm:w-auto px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg shadow-sm 
+                         font-medium text-base sm:text-lg text-white bg-accent-primary 
                          hover:bg-accent-hover transition-all"
             >
-              <span className="flex items-center justify-center gap-3">
-                <ArrowRight size={20} />
+              <span className="flex items-center justify-center gap-2 sm:gap-3">
+                <ArrowRight size={18} className="sm:w-5 sm:h-5" />
                 Generate My Score
               </span>
             </motion.button>
@@ -126,24 +126,24 @@ export default function LandingPage({ session, profile }) {
 
         {/* --- STATE 3: Logged-In Hub --- */}
         {isLoggedInHub && (
-          <div className="space-y-6">
-            <h2 className="text-4xl sm:text-5xl font-bold text-text-primary">
+          <div className="space-y-4 sm:space-y-6">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-text-primary leading-tight">
               Welcome Back, {userName}
             </h2>
-            <p className="text-lg sm:text-xl text-text-muted">
+            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-text-muted leading-relaxed">
               Your score is ready. See how you stack up or update your profile.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center pt-2 sm:pt-4">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => navigate('/dashboard')}
-                className="w-full sm:w-auto px-8 py-3 rounded-lg shadow-sm 
-                           font-medium text-white bg-accent-primary 
+                className="w-full sm:w-auto px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg shadow-sm 
+                           font-medium text-base sm:text-lg text-white bg-accent-primary 
                            hover:bg-accent-hover transition-all"
               >
-                <span className="flex items-center justify-center gap-3">
-                  <Award size={20} />
+                <span className="flex items-center justify-center gap-2 sm:gap-3">
+                  <Award size={18} className="sm:w-5 sm:h-5" />
                   View My Dashboard
                 </span>
               </motion.button>
@@ -151,20 +151,20 @@ export default function LandingPage({ session, profile }) {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => navigate('/leaderboard')} // Pratham's future route
-                className="w-full sm:w-auto px-8 py-3 rounded-lg shadow-sm 
-                           font-medium text-text-muted bg-white/10 border border-white/10
+                className="w-full sm:w-auto px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg shadow-sm 
+                           font-medium text-base sm:text-lg text-text-muted bg-white/10 border border-white/10
                            hover:bg-white/20 hover:text-text-primary
                            transition-colors"
               >
-                <span className="flex items-center justify-center gap-3">
-                  <BarChart2 size={20} />
+                <span className="flex items-center justify-center gap-2 sm:gap-3">
+                  <BarChart2 size={18} className="sm:w-5 sm:h-5" />
                   See the Leaderboard
                 </span>
               </motion.button>
             </div>
             <button
               onClick={() => navigate('/upload')}
-              className="text-text-subtle hover:text-text-muted transition-colors pt-4 text-sm"
+              className="text-text-subtle hover:text-text-muted transition-colors pt-2 sm:pt-4 text-xs sm:text-sm"
             >
               Re-upload or Update Profile
             </button>
