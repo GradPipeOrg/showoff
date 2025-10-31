@@ -1,0 +1,97 @@
+[
+  {
+    "id": 1,
+    "resume_file": "resume_repo/Muhammad_Gradpipe_2pg.pdf",
+    "llm_avg_score": 89.5
+  },
+  {
+    "id": 2,
+    "resume_file": "resume_repo/Adithya Krishna_Adobe_2pg.pdf",
+    "llm_avg_score": 77.0
+  },
+  {
+    "id": 3,
+    "resume_file": "resume_repo/Gaurav Misra_Adobe_2pg.pdf",
+    "llm_avg_score": 27.8
+  },
+  {
+    "id": 4,
+    "resume_file": "resume_repo/Nikhil Manjrekar_Adobe_2pg.pdf",
+    "llm_avg_score": 81.8
+  },
+  {
+    "id": 5,
+    "resume_file": "resume_repo/Mohit Sharma_Amazon_1pg.pdf",
+    "llm_avg_score": 64.3
+  },
+  {
+    "id": 6,
+    "resume_file": "resume_repo/Tejas_Amritkar_Amazon_1pg.pdf",
+    "llm_avg_score": 77.5
+  },
+  {
+    "id": 7,
+    "resume_file": "resume_repo/Nikhil Tiwari_Amazon_2pg.pdf",
+    "llm_avg_score": 81.3
+  },
+  {
+    "id": 8,
+    "resume_file": "resume_repo/Mayank_Kumar_Panda_FinIQ_2pg.pdf",
+    "llm_avg_score": 67.0
+  },
+  {
+    "id": 9,
+    "resume_file": "resume_repo/Prajwal Kalpande_FinMechanics_2pg.pdf",
+    "llm_avg_score": 63.8
+  },
+  {
+    "id": 10,
+    "resume_file": "resume_repo/Rohan Kalbag_Oracle_pg2.pdf",
+    "llm_avg_score": 92.5
+  },
+  {
+    "id": 11,
+    "resume_file": "resume_repo/Vibha_Karnad_P&G_2pg.pdf",
+    "llm_avg_score": 53.0
+  },
+  {
+    "id": 12,
+    "resume_file": "resume_repo/Hanan Basheer_Piramal_2pg.pdf",
+    "llm_avg_score": 94.8
+  },
+  {
+    "id": 13,
+    "resume_file": "resume_repo/Aditya Sriram_Quadeye_pg2.pdf",
+    "llm_avg_score": 91.8
+  },
+  {
+    "id": 14,
+    "resume_file": "resume_repo/Govind Saju_Rubrik_2pg.pdf",
+    "llm_avg_score": 91.3
+  },
+  {
+    "id": 15,
+    "resume_file": "resume_repo/Samarth Agarwal_Samsung_2pg.pdf",
+    "llm_avg_score": 74.8
+  },
+  {
+    "id": 16,
+    "resume_file": "resume_repo/Kalash Shah_Sony Japan_pg2.pdf",
+    "llm_avg_score": 95.0
+  },
+  {
+    "id": 17,
+    "resume_file": "resume_repo/Atishay Jain_TransUnion CIBIL_2pg.pdf",
+    "llm_avg_score": 60.0
+  },
+  {
+    "id": 18,
+    "resume_file": "resume_repo/Pratil_Shah_Microsoft_2pg.pdf",
+    "llm_avg_score": 70.0
+  },
+  {
+    "id": 19,
+    "resume_file": "resume_repo/Gauri Baheti_Goldman Sachs_(1pg).pdf",
+    "llm_avg_score": 54.8
+  }
+]
