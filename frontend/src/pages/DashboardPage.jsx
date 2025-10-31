@@ -1,3 +1,4 @@
+//DashboardPage.jsx
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabaseClient'
 import { useNavigate } from 'react-router-dom'
