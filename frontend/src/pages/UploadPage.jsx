@@ -55,58 +55,55 @@ export default function UploadPage() {
       alert('Please enter your GitHub username.')
       return
     }
+    if (!session) {
+      alert('Error: No active session. Please log in again.')
+      return
+    }
+
     setLoading(true)
     
-    // --- THIS IS THE REAL PHASE 3 ---
     try {
-      // 1. Create FormData to send file + text
+      // 1. Create FormData to send file + text + user_id
       const formData = new FormData()
       formData.append('resume', resumeFile)
       formData.append('github_username', githubUsername)
+      formData.append('user_id', session.user.id) // <-- CRITICAL: Send user_id
 
-      // 2. Call our "Mock" FastAPI backend
+      // 1.5. SET THE "IN-PROGRESS" FLAG & TIMESTAMP
+      localStorage.setItem('analysis_in_progress', 'true')
+      localStorage.setItem('analysis_start_time', Date.now().toString())
+
+      // 2. Call our new "Job Submitter" API
       const response = await axios.post('http://localhost:8000/rank_profile', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       })
       
-      const mockScores = response.data 
-      // e.g., { resume_score: 88, github_score: 92, ... }
-
-      // 3. Save the "mock" scores to our Supabase 'profiles' table
-      // This fulfills the "contract" for Pratham's dashboard
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          resume_score: mockScores.resume_score,
-          github_score: mockScores.github_score,
-          showoff_score: mockScores.showoff_score,
-          rank: mockScores.rank,
-        })
-        .eq('user_id', session.user.id)
-
-      if (updateError) {
-        throw updateError
+      // 3. We no longer get scores. We expect a "processing" status.
+      if (response.data.status === "processing") {
+        // Success! Redirect to the Dashboard.
+        // The dashboard will show the "processing" state (in Phase 3).
+        navigate('/dashboard')
+      } else {
+        // This should not happen if the backend is correct
+        throw new Error("Invalid response from server. Expected 'processing' status.")
       }
-
-      // On success, navigate to the DASHBOARD, not the landing page
-      navigate('/dashboard')
 
     } catch (error) {
-      // Log the full error to the console
       console.error('CRITICAL: Error in handleRankProfile:', error)
-
-      // Check if it's a Supabase API error (like RLS)
-      if (error.code) {
-        alert(`Error saving scores: ${error.message} (Code: ${error.code})`)
-      } else if (error.response) {
-        // This is an Axios (backend) error
-        alert('Error from backend API. Please check server logs.')
+      let alertMessage = 'An unknown error occurred. Please try again.'
+      if (error.response) {
+        // The request was made and the server responded with an error
+        alertMessage = `Error: ${error.response.data.detail}`
+      } else if (error.request) {
+        // The request was made but no response was received
+        alertMessage = 'Error: Cannot connect to the server. Is it running?'
       } else {
-        // Generic error
-        alert('An unknown error occurred. Please try again.')
+        // Something else happened
+        alertMessage = `Error: ${error.message}`
       }
+      alert(alertMessage)
     } finally {
       setLoading(false)
     }
@@ -211,7 +208,7 @@ export default function UploadPage() {
                        disabled:opacity-50 disabled:cursor-not-allowed
                        transition-all"
           >
-            {loading ? 'Generating Your Score...' : 'Generate My Score'}
+            {loading ? 'Submitting for Analysis...' : 'Generate My Score'}
           </motion.button>
         </form>
     </motion.div>

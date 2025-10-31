@@ -1,0 +1,227 @@
+import os
+import json
+from celery import Celery
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
+import google.generativeai as genai
+from supabase import create_client, Client
+import httpx # We'll use the sync client here
+from dotenv import load_dotenv
+
+# --- 1. CONFIGURATION ---
+load_dotenv() # Loads the .env file
+
+REDIS_URL = "redis://localhost:6379/0"
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY") # This MUST be your Service Role Key
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+LLM_PROVIDER = "gemini" # Our "pluggable" switch
+
+# --- 2. MASTER PROMPT v5 (v1.8 RUBRIC) ---
+# This is our "gold standard" rubric
+MASTER_PROMPT_V5 = """
+You are an expert Senior Technical Recruiter and Hiring Manager at a top-tier tech firm (e.g., Google, Jane Street, or a top YC startup). Your *only* goal is to find the top 1% of elite *software engineers*. You are NOT hiring for community or marketing. You value deep, complex, and verifiable technical skill above all else. You are ruthlessly strict.
+
+Your task is to analyze the resume I am about to upload. Read and parse the entire document. Then, score it *strictly* according to the **"Unified Scoring Rubric v1.8 (Elite Engineering-Focused)"** below.
+
+You must score *only* the Resume Analysis part. The total score you give must be between **0 and 100**.
+
+---
+## Unified Scoring Rubric v1.8 (Elite Engineering-Focused)
+
+### 1. Foundational Professionalism & Clarity (Max 10 pts)
+*(A basic "pass/fail" check for following instructions.)*
+* **1.1: Presentation Standards (5 pts)**
+    * **5 pts:** Single page, clean format, no typos.
+    * **3 pts:** Minor issues (e.g., 1-2 typos, 2 pages).
+    * **1 pt:** Multiple major issues.
+* **1.2: Structure & Links (5 pts)**
+    * **5 pts:** Optimal order, functional GitHub & LinkedIn links.
+    * **3 pts:** Non-optimal order, or links missing.
+    * **1 pt:** Illogical, missing GitHub link.
+
+### 2. Technical Proficiency Signals (Max 20 pts)
+*(A keyword check. This is just a claim, not proof.)*
+* **2.1: Skill Relevance & Demand (10 pts)**
+    * **10 pts:** Lists multiple, relevant, in-demand 2025 tech (e.g., Python, React, Node.js, C++, AWS, Docker).
+    * **5 pts:** Mix of relevant and basic/less-critical tech.
+    * **1 pt:** Dominated by basic/irrelevant tech.
+* **2.2: Skill Grouping & Clarity (10 pts)**
+    * **10 pts:** Skills are clearly categorized (Languages, Frameworks, Tools) AND there are NO subjective self-ratings (e.g., "Python 8/10").
+    * **5 pts:** Skills are in a single block OR they include subjective self-ratings (a minor red flag).
+    * **1 pt:** Disorganized and includes subjective ratings.
+
+### 3. Evidence of Impact & Technical Depth (Max 60 pts)
+*(This is the MOST IMPORTANT section, worth 60 points of the total score.)*
+* **3.1: Quantification & Verbs (10 pts)**
+    * **10 pts:** Majority of bullets (in Projects/Experience) are quantified with specific metrics AND use strong action verbs (e.g., "Architected," "Optimized").
+    * **5 pts:** Some quantification OR good verbs, but not both.
+    * **1 pt:** No quantified impact; just a list of responsibilities.
+* **3.2: Project/Experience Technical Complexity (50 pts) - [CRITICAL]**
+    * **50 pts:** **(Top 1% / Elite)** Overwhelming evidence of *multiple*, *deeply complex*, and *self-directed* projects (e.g., building a systems-level tool like a parser/compiler, novel ML research, a full-stack app with microservices/k8s). OR a high-impact internship at an *elite* tech/quant firm (e.g., Google, Jane Street, Rubrik, Quadeye) with clear, quantified achievements.
+    * **30 pts:** **(Strong Engineer)** Describes *one* very complex project OR a solid internship at a good tech company (e.g., Microsoft, Amazon, Oracle). The tech stack is modern and applied correctly.
+    * **15 pts:** **(Good Student)** Projects are of moderate complexity (e.g., frontend + public API, standard ML model clones) or a limited-scope internship. This is the "meets expectations" tier.
+    * **1 pt:** **(Low Signal)** Projects are trivial, tutorial-clones, or "Java (Basic)"-level. Descriptions are vague.
+
+### 4. Growth & Leadership Indicators (Max 10 pts)
+*(A "tie-breaker" or "bonus" for well-rounded candidates. This section CANNOT save a technically weak profile.)*
+* **4.1: Proactive Learning/Initiative (5 pts)**
+    * **5 pts:** Multiple examples of *technical* activities outside of coursework (e.g., hackathons, *technical* clubs, significant personal projects).
+    * **2 pts:** One or two such activities mentioned.
+    * **0 pts:** No evidence of initiative beyond coursework.
+* **4.2: Leadership & Teamwork (PoR) (5 pts)**
+    * **5 pts:** Mentions a formal *technical* leadership PoR (e.g., "Tech Lead," "Project Head") OR clearly describes leading a team on a complex project.
+    * **2 pts:** Mentions a non-technical PoR (e.g., "Community Manager"), a mentorship role, or just "worked in a team."
+    * **0 pts:** No mention of teamwork or leadership.
+
+---
+
+**YOUR TASK:**
+Read the resume PDF I upload. Evaluate it *strictly* against this **v1.8 Elite Engineering-Focused** rubric. Provide your final score and a brief justification in a single JSON object. Do not add any other text.
+
+**Output Format:**
+{
+  "total_score_100": <your_final_score_0_to_100>,
+  "justification": "<Your 2-sentence rationale for the score>"
+}
+"""
+
+# --- 3. SETUP: CELERY, SUPABASE, GEMINI ---
+celery_app = Celery("tasks", broker=REDIS_URL, backend=REDIS_URL)
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+genai.configure(api_key=GEMINI_API_KEY)
+gemini_model = genai.GenerativeModel(model_name="gemini-2.5-flash")
+
+# --- 4. MODULAR LLM "ROUTER" (SYNC) ---
+
+def _call_gemini_api_sync(resume_bytes: bytes) -> dict:
+    """
+    Private SYNC function to call the Gemini API.
+    """
+    print("--- [Worker] Calling Gemini API... ---")
+    try:
+        # Gemini can accept raw bytes for PDFs
+        resume_file_blob = {"mime_type": "application/pdf", "data": resume_bytes}
+        
+        response = gemini_model.generate_content(
+            [MASTER_PROMPT_V5, resume_file_blob],
+            generation_config={"response_mime_type": "application/json"},
+            safety_settings={
+                HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+            }
+        )
+        return json.loads(response.text)
+    except Exception as e:
+        print(f"--- [Worker] Gemini API ERROR: {e} ---")
+        # Return a 0 score but log the justification for debugging
+        return {"total_score_100": 0, "justification": f"Error: {e}"}
+
+
+def score_resume_with_llm_sync(resume_bytes: bytes) -> dict:
+    """
+    This is our "pluggable" router. It calls the
+    correct LLM based on the LLM_PROVIDER config.
+    """
+    if LLM_PROVIDER == "gemini":
+        return _call_gemini_api_sync(resume_bytes)
+    # elif LLM_PROVIDER == "deepseek":
+    #   return _call_deepseek_api_sync(resume_bytes)
+    else:
+        print(f"--- [Worker] ERROR: Unknown LLM Provider '{LLM_PROVIDER}' ---")
+        return {"total_score_100": 0, "justification": "Error: Invalid LLM Provider"}
+
+
+# --- 5. GITHUB SCORER v1.5 (SYNC) ---
+# We'll use our old heuristic GitHub scorer as a placeholder
+def get_github_score_sync(username: str) -> int:
+    """
+    Fetches GitHub data and scores it based on our v1.5 Heuristic Rubric.
+    This is SYNCHRONOUS.
+    """
+    print(f"--- [Worker] GitHub Scorer (v1.5): Starting for {username} ---")
+    total_score = 0
+    headers = {"Authorization": f"token {os.environ.get('GITHUB_PAT')}"}
+    
+    try:
+        with httpx.Client() as client: # Use the sync client
+            user_url = f"https://api.github.com/users/{username}"
+            user_response = client.get(user_url, headers=headers)
+            
+            if user_response.status_code != 200:
+                print(f"--- [Worker] GitHub Scorer: ERROR - User {username} not found or API error. ---")
+                return 0
+            
+            user_data = user_response.json()
+
+            # (This is our simplified v1.5 logic)
+            if user_data.get("bio") and user_data.get("name"):
+                total_score += 5
+            elif user_data.get("bio") or user_data.get("name"):
+                total_score += 3
+            
+            if user_data.get("public_repos", 0) > 5:
+                total_score += 5
+            elif user_data.get("public_repos", 0) > 1:
+                total_score += 3
+            
+            total_score += 10 # Base points for quality proxy
+            
+            stars_and_followers = user_data.get("followers", 0)
+            total_score += min(stars_and_followers // 2, 10)
+            
+            scaled_score = int((total_score / 30.0) * 100)
+            
+            print(f"--- [Worker] GitHub Scorer (v1.5): Raw Score = {total_score}/30, Scaled = {scaled_score}/100 ---")
+            return max(0, min(scaled_score, 100))
+            
+    except Exception as e:
+        print(f"--- [Worker] GitHub Scorer (v1.5): ERROR --- {e}")
+        return 0
+
+
+# --- 6. CELERY TASK: THE "BRAIN" ---
+@celery_app.task(name="run_deep_analysis")
+def run_deep_analysis(user_id: str, github_username: str, resume_path: str):
+    """
+    This is the main "job" the worker runs.
+    It is SYNCHRONOUS and will run to completion.
+    """
+    print(f"--- [Worker] Job Started for user: {user_id} ---")
+    
+    # 1. Download Resume from Supabase Storage
+    print(f"--- [Worker] Downloading resume: {resume_path} ---")
+    try:
+        # The supabase-python client storage download is synchronous
+        resume_bytes = supabase.storage.from_("resumes").download(resume_path)
+    except Exception as e:
+        print(f"--- [Worker] ERROR downloading file: {e} ---")
+        return # Job fails
+    
+    # 2. Score Resume with our "Pluggable" LLM (Gemini)
+    resume_score_data = score_resume_with_llm_sync(resume_bytes)
+    resume_score = resume_score_data.get("total_score_100", 0)
+    
+    # 3. Score GitHub (v1.5 - Heuristic)
+    github_score = get_github_score_sync(github_username)
+    
+    # 4. Calculate Final Score
+    # Resume (40%) + GitHub (60%)
+    showoff_score = int((resume_score * 0.4) + (github_score * 0.6))
+    
+    # 5. Save *ALL* scores to Supabase
+    print(f"--- [Worker] Saving scores for {user_id}: R={resume_score}, G={github_score}, Total={showoff_score} ---")
+    try:
+        supabase.from_("profiles").update({
+            "resume_score": resume_score,
+            "github_score": github_score,
+            "showoff_score": showoff_score,
+            "rank": 0 # We'll calculate rank later
+        }).eq("user_id", user_id).execute()
+        
+        print(f"--- [Worker] Job COMPLETE for user: {user_id} ---")
+    except Exception as e:
+        print(f"--- [Worker] ERROR saving to Supabase: {e} ---")
+
