@@ -75,6 +75,20 @@ export default function UploadPage() {
 
       // 2. Call our new "Job Submitter" API
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+      
+      // Debug logging (remove in production if desired)
+      console.log('[UploadPage] API Base URL:', apiBaseUrl)
+      console.log('[UploadPage] Full endpoint:', `${apiBaseUrl}/rank_profile`)
+      console.log('[UploadPage] Env var present:', !!import.meta.env.VITE_API_BASE_URL)
+      
+      // Validate API URL in production (not localhost)
+      if (window.location.hostname !== 'localhost' && apiBaseUrl.includes('localhost')) {
+        console.error('[UploadPage] ERROR: VITE_API_BASE_URL not set! Using localhost fallback in production.')
+        alert('Configuration Error: API URL not configured. Please contact support.')
+        setLoading(false)
+        return
+      }
+      
       const response = await axios.post(`${apiBaseUrl}/rank_profile`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
