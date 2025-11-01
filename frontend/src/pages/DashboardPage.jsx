@@ -568,14 +568,10 @@ export default function DashboardPage() {
             className="p-2 sm:p-3 rounded-xl bg-white/5 border border-white/10 flex flex-col items-center space-y-1 sm:space-y-2 sm:col-span-2 lg:col-span-1"
           >
             <h3 className="text-sm sm:text-base font-semibold text-text-primary">Coding Platform Score</h3>
-            <DoughnutChart 
-              score={75}
-              title="Platform" 
-              size={80} 
-              strokeWidth={8} 
-              color='#3b82f6' 
-            />
-            <p className="text-xs sm:text-sm text-text-muted">75 / 100</p>
+            <div className="flex items-center justify-center" style={{ width: 80, height: 80 }}>
+              <p className="text-xs sm:text-sm text-text-muted italic">Coming Soon</p>
+            </div>
+            <p className="text-xs sm:text-sm text-text-muted">—</p>
           </motion.div>
         </div>
 
