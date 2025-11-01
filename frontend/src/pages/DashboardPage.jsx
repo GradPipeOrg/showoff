@@ -568,19 +568,35 @@ export default function DashboardPage() {
           </motion.div>
         </div>
 
-        {/* View Full Leaderboard Button */}
-        <motion.button
-          onClick={() => navigate('/leaderboard')}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="w-full py-2 sm:py-2.5 px-4 rounded-lg shadow-sm text-sm sm:text-base font-medium 
-                     text-white bg-accent-primary hover:bg-accent-hover
-                     focus:outline-none focus:ring-2 focus:ring-offset-2 
-                     focus:ring-offset-bg-primary focus:ring-accent-focus
-                     transition-all"
-        >
-          View Full Leaderboard
-        </motion.button>
+        {/* --- Action Buttons --- */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          {/* Re-analyze Button */}
+          <motion.button
+            onClick={() => navigate('/upload')}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="w-full py-2 sm:py-2.5 px-4 rounded-lg shadow-sm text-sm sm:text-base font-medium 
+                       text-text-muted bg-white/10 border border-white/10
+                       hover:bg-white/20 hover:text-text-primary
+                       transition-colors"
+          >
+            Re-analyze Profile
+          </motion.button>
+          
+          {/* View Leaderboard Button */}
+          <motion.button
+            onClick={() => navigate('/leaderboard')}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="w-full py-2 sm:py-2.5 px-4 rounded-lg shadow-sm text-sm sm:text-base font-medium 
+                       text-white bg-accent-primary hover:bg-accent-hover
+                       focus:outline-none focus:ring-2 focus:ring-offset-2 
+                       focus:ring-offset-bg-primary focus:ring-accent-focus
+                       transition-all"
+          >
+            View Full Leaderboard
+          </motion.button>
+        </div>
 
         {/* B2B Opt-in Toggle */}
         <motion.div
