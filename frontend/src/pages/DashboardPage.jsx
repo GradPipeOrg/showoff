@@ -529,6 +529,17 @@ export default function DashboardPage() {
               color='#f59e0b' 
             />
             <p className="text-xs sm:text-sm text-text-muted">{profile.resume_score} / 100</p>
+            
+            {/* --- NEW JUSTIFICATION TEXT --- */}
+            {profile.resume_justification && (
+              <blockquote className="mt-2 p-2 border-l-2 border-accent-focus bg-white/5 text-left">
+                <p className="text-xs sm:text-sm text-text-muted italic">
+                  " {profile.resume_justification} "
+                </p>
+              </blockquote>
+            )}
+            {/* --- END OF JUSTIFICATION --- */}
+            
           </motion.div>
 
           {/* GitHub Score */}
