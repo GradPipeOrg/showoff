@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 # --- 1. CONFIGURATION ---
 load_dotenv() # This loads the .env file
 
-REDIS_URL = "redis://localhost:6379/0"
+REDIS_URL = os.environ.get("REDIS_URL")
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY") # This MUST be your Service Role Key
 
