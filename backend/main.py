@@ -29,7 +29,10 @@ celery_app = Celery("tasks", broker=REDIS_URL, backend=REDIS_URL)
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # 3. Set up CORS
-origins = ["http://localhost:5173"]
+# Allow multiple origins from environment variable, fallback to localhost for dev
+cors_origins = os.environ.get("CORS_ORIGINS", "http://localhost:5173")
+# Split by comma if multiple origins are provided
+origins = [origin.strip() for origin in cors_origins.split(",")]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
