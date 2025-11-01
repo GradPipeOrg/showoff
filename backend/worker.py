@@ -90,7 +90,7 @@ celery_app = Celery("tasks", broker=REDIS_URL, backend=REDIS_URL)
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 genai.configure(api_key=GEMINI_API_KEY)
-gemini_model = genai.GenerativeModel(model_name="gemini-2.5-flash")
+gemini_model = genai.GenerativeModel(model_name="gemini-2.5-pro-preview-03-25")
 
 # --- 4. MODULAR LLM "ROUTER" (SYNC) ---
 
@@ -134,51 +134,125 @@ def score_resume_with_llm_sync(resume_bytes: bytes) -> dict:
         return {"total_score_100": 0, "justification": "Error: Invalid LLM Provider"}
 
 
-# --- 5. GITHUB SCORER v1.5 (SYNC) ---
-# We'll use our old heuristic GitHub scorer as a placeholder
-def get_github_score_sync(username: str) -> int:
+# --- 5. "BETA ENGINE" GITHUB SCORER (v2.0 HEURISTIC) ---
+def get_github_score_v2_heuristic(username: str) -> int:
     """
-    Fetches GitHub data and scores it based on our v1.5 Heuristic Rubric.
-    This is SYNCHRONOUS.
+    This is the NEW "Beta Engine" (v2.0) Heuristic.
+    It implements the General Rubric PDF by making multiple API calls.
+    It is SYNCHRONOUS.
     """
-    print(f"--- [Worker] GitHub Scorer (v1.5): Starting for {username} ---")
+    print(f"--- [Worker] GitHub Scorer (v2.0 Heuristic): Starting for {username} ---")
     total_score = 0
     headers = {"Authorization": f"token {os.environ.get('GITHUB_PAT')}"}
     
+    # Define our rubric weights
+    WEIGHTS = {
+        'profile_polish': 5,
+        'pinned_repos': 5,
+        'readme_quality': 15,
+        'code_structure_and_tests': 35,
+        'commit_history': 20,
+        'branching': 10,
+        'oss_contribs': 5,
+        'community_signals': 5
+    }
+    
     try:
-        with httpx.Client() as client: # Use the sync client
+        with httpx.Client(headers=headers, timeout=20.0) as client:
+            
+            # --- 1. Profile Curation (Max 10 pts) ---
             user_url = f"https://api.github.com/users/{username}"
-            user_response = client.get(user_url, headers=headers)
-            
-            if user_response.status_code != 200:
-                print(f"--- [Worker] GitHub Scorer: ERROR - User {username} not found or API error. ---")
+            user_response = client.get(user_url)
+            if user_response.status_code != 200: 
+                print(f"--- [Worker] GitHub Scorer: ERROR - User {username} not found. ---")
                 return 0
-            
             user_data = user_response.json()
-
-            # (This is our simplified v1.5 logic)
+            
+            # 1.1: Profile Polish (5 pts)
             if user_data.get("bio") and user_data.get("name"):
-                total_score += 5
+                total_score += WEIGHTS['profile_polish']
             elif user_data.get("bio") or user_data.get("name"):
-                total_score += 3
+                total_score += 2
             
-            if user_data.get("public_repos", 0) > 5:
-                total_score += 5
-            elif user_data.get("public_repos", 0) > 1:
-                total_score += 3
+            # 1.2: Pinned Repos (5 pts)
+            graphql_query = {"query": f'query {{ user(login: "{username}") {{ pinnedItems(first: 6, types: REPOSITORY) {{ nodes {{ ... on Repository {{ name description, stargazerCount }} }} }} }} }}'}
+            gql_response = client.post("https://api.github.com/graphql", json=graphql_query)
+            repo_nodes = []
+            if gql_response.status_code == 200:
+                repo_nodes = gql_response.json().get("data", {}).get("user", {}).get("pinnedItems", {}).get("nodes", [])
             
-            total_score += 10 # Base points for quality proxy
+            if repo_nodes and len(repo_nodes) >= 2:
+                total_score += WEIGHTS['pinned_repos']
+            elif repo_nodes:
+                total_score += 1
+
+            # --- 2. Project Quality & Depth (Max 50 pts) ---
+            repo_analysis_score = 0
+            repo_url = "" # Define repo_url in the outer scope
+            if repo_nodes:
+                # We will analyze *one* pinned repo to save time/API calls
+                repo_name = repo_nodes[0].get("name")
+                repo_url = f"https://api.github.com/repos/{username}/{repo_name}"
+                
+                # 2.1 README Quality (15 pts)
+                readme_response = client.get(f"{repo_url}/readme")
+                if readme_response.status_code == 200 and readme_response.json().get("size", 0) > 200: # Check if README has > 200 bytes
+                    repo_analysis_score += WEIGHTS['readme_quality']
+                elif readme_response.status_code == 200:
+                    repo_analysis_score += 7
+
+                # 2.2 & 2.3 Code Structure & Testing (35 pts)
+                tree_response = client.get(f"{repo_url}/git/trees/main?recursive=1") # Assumes 'main' branch
+                if tree_response.status_code != 200: # Try 'master' as fallback
+                    tree_response = client.get(f"{repo_url}/git/trees/master?recursive=1")
+                
+                if tree_response.status_code == 200:
+                    files = tree_response.json().get("tree", [])
+                    paths = {f.get("path", "").lower() for f in files}
+                    
+                    has_tests = any("test" in p or ".spec." in p or ".github/workflows" in p or "pytest.ini" in p for p in paths)
+                    has_src = any("src/" in p for p in paths)
+                    
+                    if has_tests and has_src:
+                        repo_analysis_score += WEIGHTS['code_structure_and_tests'] # (Elite)
+                    elif has_tests or has_src:
+                        repo_analysis_score += 20 # (Strong)
+                    else:
+                        repo_analysis_score += 5  # (Good)
             
-            stars_and_followers = user_data.get("followers", 0)
-            total_score += min(stars_and_followers // 2, 10)
+            total_score += repo_analysis_score # Add up to 50 pts
             
-            scaled_score = int((total_score / 30.0) * 100)
+            # --- 3. Engineering Craftsmanship (Max 30 pts) ---
+            # 3.1 Commit History
+            commits_response = client.get(f"{repo_url}/commits?per_page=10") if repo_url else None
+            commits = commits_response.json() if commits_response and commits_response.status_code == 200 else []
+            if len(commits) > 5: # More than 5 commits
+                total_score += WEIGHTS['commit_history']
+            elif len(commits) > 1: # More than "Initial Commit"
+                total_score += 10
             
-            print(f"--- [Worker] GitHub Scorer (v1.5): Raw Score = {total_score}/30, Scaled = {scaled_score}/100 ---")
-            return max(0, min(scaled_score, 100))
+            # 3.2 Branching
+            branches_response = client.get(f"{repo_url}/branches") if repo_url else None
+            if branches_response and branches_response.status_code == 200 and len(branches_response.json()) > 1:
+                total_score += WEIGHTS['branching']
             
+            # --- 4. Community Engagement (Max 10 pts - "Bonus") ---
+            # 4.1 OSS Contributions
+            contrib_url = f"https://api.github.com/search/issues?q=author:{username}+is:pr+is:merged+-user:{username}"
+            contrib_response = client.get(contrib_url)
+            if contrib_response.status_code == 200 and contrib_response.json().get("total_count", 0) > 0:
+                total_score += WEIGHTS['oss_contribs']
+            
+            # 4.2 Stars/Forks
+            stars = repo_nodes[0].get("stargazerCount", 0) if repo_nodes else 0
+            if user_data.get("followers", 0) > 5 or stars > 5:
+                total_score += WEIGHTS['community_signals']
+                
+            print(f"--- [Worker] GitHub Scorer (v2.0 Heuristic): Score = {total_score}/100 ---")
+            return max(0, min(total_score, 100)) # Clamp score
+
     except Exception as e:
-        print(f"--- [Worker] GitHub Scorer (v1.5): ERROR --- {e}")
+        print(f"--- [Worker] GitHub Scorer (v2.0 Heuristic): CRITICAL ERROR --- {e}")
         return 0
 
 
@@ -204,12 +278,11 @@ def run_deep_analysis(user_id: str, github_username: str, resume_path: str):
     resume_score_data = score_resume_with_llm_sync(resume_bytes)
     resume_score = resume_score_data.get("total_score_100", 0)
     
-    # 3. Score GitHub (v1.5 - Heuristic)
-    github_score = get_github_score_sync(github_username)
+    # 3. Score GitHub with NEW "Beta Engine" (v2.0 Heuristic)
+    github_score = get_github_score_v2_heuristic(github_username)
     
-    # 4. Calculate Final Score
-    # Resume (40%) + GitHub (60%)
-    showoff_score = int((resume_score * 0.4) + (github_score * 0.6))
+    # 4. Calculate Final Score (NEW 70/30 WEIGHTING)
+    showoff_score = int((resume_score * 0.7) + (github_score * 0.3))
     
     # 5. Save *ALL* scores to Supabase
     print(f"--- [Worker] Saving scores for {user_id}: R={resume_score}, G={github_score}, Total={showoff_score} ---")
@@ -224,4 +297,3 @@ def run_deep_analysis(user_id: str, github_username: str, resume_path: str):
         print(f"--- [Worker] Job COMPLETE for user: {user_id} ---")
     except Exception as e:
         print(f"--- [Worker] ERROR saving to Supabase: {e} ---")
-
