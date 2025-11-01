@@ -277,6 +277,7 @@ def run_deep_analysis(user_id: str, github_username: str, resume_path: str):
     # 2. Score Resume with our "Pluggable" LLM (Gemini)
     resume_score_data = score_resume_with_llm_sync(resume_bytes)
     resume_score = resume_score_data.get("total_score_100", 0)
+    resume_justification = resume_score_data.get("justification", "Analysis complete.") # Get the justification
     
     # 3. Score GitHub with NEW "Beta Engine" (v2.0 Heuristic)
     github_score = get_github_score_v2_heuristic(github_username)
@@ -291,6 +292,7 @@ def run_deep_analysis(user_id: str, github_username: str, resume_path: str):
             "resume_score": resume_score,
             "github_score": github_score,
             "showoff_score": showoff_score,
+            "resume_justification": resume_justification,
             "rank": 0 # We'll calculate rank later
         }).eq("user_id", user_id).execute()
         
