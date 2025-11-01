@@ -74,7 +74,8 @@ export default function UploadPage() {
       localStorage.setItem('analysis_start_time', Date.now().toString())
 
       // 2. Call our new "Job Submitter" API
-      const response = await axios.post('http://localhost:8000/rank_profile', formData, {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+      const response = await axios.post(`${apiBaseUrl}/rank_profile`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
