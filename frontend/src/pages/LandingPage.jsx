@@ -23,6 +23,11 @@ export default function LandingPage({ session, profile }) {
     setLoading(true)
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
+      options: {
+      // for local it will take to "http://localhost:5173"
+      // for production it will take to "https://showoff-psi.vercel.app"
+        redirectTo: window.location.origin
+      }
     })
     if (error) {
       alert(error.error_description || error.message)
