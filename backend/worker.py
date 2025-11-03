@@ -17,6 +17,7 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY") # This MUST be your Service Role Key
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 LLM_PROVIDER = "gemini" # Our "pluggable" switch
+GITHUB_PAT = os.environ.get("GITHUB_PAT")
 
 # --- 2. MASTER PROMPT v5 (v1.8 RUBRIC) ---
 # This is our "gold standard" rubric
@@ -87,6 +88,190 @@ Read the resume PDF I upload. Evaluate it *strictly* against this **v1.8 Elite E
 }
 """
 
+# --- 2.5. MASTER GITHUB PROMPT v2.2 (Deep-Tech Edition) ---
+
+MASTER_GITHUB_PROMPT_V2_2 = """
+
+You are an expert Principal Engineer at a top-tier tech firm (e.g., Google, Jane Street). Your *only* goal is to find elite *software engineers*. You are ruthlessly technical. You value "proof-of-work" (the code itself) *far* more than "fluff" (like READMEs or profile polish).
+
+Your task is to analyze a "GitHub Context Packet" (a JSON object) that contains *limited scraped data* from a user's GitHub profile. You must score this packet *strictly* according to the **"Unified Scoring Rubric v2.2 (Deep-Tech Engine)"** below.
+
+The total score you give must be between **0 and 100**.
+
+---
+
+## 1. Input Data Structure (The "Context Packet")
+
+You will receive a JSON object with the following *limited* structure:
+
+{
+
+  "user_profile": {
+
+    "bio": "string",
+
+    "name": "string",
+
+    "followers": "integer"
+
+  },
+
+  // This field is CRITICAL.
+
+  // "pinned": User curated these.
+
+  // "top_repo_fallback": User had no pins, so we automatically grabbed their most active repos.
+
+  "analysis_method": "pinned" | "top_repo_fallback",
+
+  
+
+  "analyzed_repos": [
+
+    {
+
+      "name": "string",
+
+      "description": "string",
+
+      "readme_content": "string (raw text, truncated)",
+
+      "file_list": ["string", "string", ...], // List of file *names* only
+
+      "commit_messages": ["string", "string", ...], // List of *last 10* commit messages
+
+      "branch_count": "integer",
+
+      "stargazerCount": "integer",
+
+      
+
+      // The "Deep Tech" data:
+
+      "raw_code_snippets": [
+
+        { "file_name": "main.py", "content": "<raw python code...>" },
+
+        { "file_name": "App.jsx", "content": "<raw javascript code...>" }
+
+      ]
+
+    },
+
+    ... (up to 3 repos)
+
+  ],
+
+  "oss_contributions_count": "integer" // A simple count of merged PRs
+
+}
+
+---
+
+## 2. The Scoring Rubric (v2.2 "Deep-Tech")
+
+You must score the packet against these rules.
+
+### 1. Profile Curation (Max 10 pts)
+
+*(A basic "first impression" check. This is low-priority.)*
+
+* **1.1: Profile Polish (5 pts)**
+
+    * **5 pts:** The `user_profile.bio` is clear and professional AND a `user_profile.name` is present.
+
+    * **2 pts:** Profile is partially complete.
+
+* **1.2: Repository Curation (5 pts)**
+
+    * **5 pts:** The `analysis_method` is `"pinned"`. This shows the user is organized.
+
+    * **0 pts:** The `analysis_method` is `"top_repo_fallback"`. (No penalty, but no bonus).
+
+### 2. Project Quality & Depth (Max 60 pts)
+
+*(This is the MOST IMPORTANT section. Focus on the raw code.)*
+
+* **2.1: Code Quality & Complexity (40 pts) - [CRITICAL]**
+
+    * *Instructions:* Analyze the `raw_code_snippets` for *actual* engineering skill.
+
+    * **40 pts (Elite):** The code shows high complexity (e.g., async, custom algorithms, complex state management) AND is clean (well-structured, good variable names).
+
+    * **25 pts (Strong):** The code is functional and non-trivial (e.g., a standard CRUD app) but doesn't show deep complexity.
+
+    * **10 pts (Good):** The code is simple, or functional but messy.
+
+    * **1 pt (Low Signal):** The code is trivial, a copy/paste, or "Java (Basic)"-level.
+
+* **2.2: Code Structure & Testing (10 pts)**
+
+    * **10 pts:** The `file_list` shows *both* a logical structure (e.g., `src/`) AND clear evidence of testing (e.g., `tests/`, `*.test.js`, `.github/workflows/main.yml`).
+
+    * **5 pts:** Shows *either* a good structure *or* tests, but not both.
+
+    * **1 pt:** Disorganized and no tests.
+
+* **2.3: README Quality (10 pts)**
+
+    * **10 pts:** The `readme_content` is comprehensive (description, tech stack, setup instructions).
+
+    * **5 pts:** READMEs are minimal.
+
+    * **1 pt:** No READMEs.
+
+### 3. Engineering Craftsmanship (Max 20 pts)
+
+*(This proves *how* they work.)*
+
+* **3.1: Commit History Quality (15 pts)**
+
+    * **15 pts:** The `commit_messages` show a clear pattern of atomic commits with descriptive messages (e.g., "feat: add user auth").
+
+    * **7 pts:** Commits are infrequent/large, or messages are generic ("update," "wip").
+
+    * **1 pt:** The project was one large "Initial commit."
+
+* **3.2: Use of Branching (5 pts)**
+
+    * **5 pts:** The `branch_count` is > 1.
+
+    * **0 pts:** All commits are on the `main` branch.
+
+### 4. Community Engagement (Max 10 pts - "Bonus")
+
+*(A "tie-breaker".)*
+
+* **4.1: Open-Source Contributions (5 pts)**
+
+    * **5 pts:** The `oss_contributions_count` is > 0.
+
+    * **0 pts:** No OSS contributions.
+
+* **4.2: Community Signals (Stars/Forks) (5 pts)**
+
+    * **5 pts:** The `analyzed_repos` show notable `stargazerCount` (e.g., > 10).
+
+    * **0 pts:** Few or no stars/forks.
+
+---
+
+## 3. Your Task
+
+Read the "GitHub Context Packet" (JSON) I provide. Evaluate it *strictly* against this **v2.2 "Deep-Tech"** rubric. Prioritize your analysis on the `raw_code_snippets`. Provide your final score and a brief justification in a single JSON object. Do not add any other text.
+
+**Output Format:**
+
+{
+
+  "total_score_100": <your_final_score_0_to_100>,
+
+  "justification": "<Your 2-sentence rationale focusing on the *code quality* and *project complexity*>"
+
+}
+
+"""
+
 # --- 3. SETUP: CELERY, SUPABASE, GEMINI ---
 celery_app = Celery("tasks", broker=REDIS_URL, backend=REDIS_URL)
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -96,29 +281,41 @@ gemini_model = genai.GenerativeModel(model_name="gemini-2.5-pro-preview-03-25")
 
 # --- 4. MODULAR LLM "ROUTER" (SYNC) ---
 
-def _call_gemini_api_sync(resume_bytes: bytes) -> dict:
+def _call_gemini_api_sync(*args) -> dict:
     """
     Private SYNC function to call the Gemini API.
+    Overloaded behavior:
+    - _call_gemini_api_sync(resume_bytes)
+    - _call_gemini_api_sync(prompt_str, context_json_str)
     """
     print("--- [Worker] Calling Gemini API... ---")
     try:
-        # Gemini can accept raw bytes for PDFs
-        resume_file_blob = {"mime_type": "application/pdf", "data": resume_bytes}
-        
-        response = gemini_model.generate_content(
-            [MASTER_PROMPT_V5, resume_file_blob],
-            generation_config={"response_mime_type": "application/json"},
-            safety_settings={
-                HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-                HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-                HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-                HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-            }
-        )
+        safety_settings = {
+            HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+        }
+        if len(args) == 1 and isinstance(args[0], (bytes, bytearray)):
+            resume_bytes = args[0]
+            resume_file_blob = {"mime_type": "application/pdf", "data": resume_bytes}
+            response = gemini_model.generate_content(
+                [MASTER_PROMPT_V5, resume_file_blob],
+                generation_config={"response_mime_type": "application/json"},
+                safety_settings=safety_settings,
+            )
+        elif len(args) == 2 and all(isinstance(a, str) for a in args):
+            prompt_str, context_json_str = args
+            response = gemini_model.generate_content(
+                [prompt_str, context_json_str],
+                generation_config={"response_mime_type": "application/json"},
+                safety_settings=safety_settings,
+            )
+        else:
+            raise ValueError("Invalid arguments for _call_gemini_api_sync")
         return json.loads(response.text)
     except Exception as e:
         print(f"--- [Worker] Gemini API ERROR: {e} ---")
-        # Return a 0 score but log the justification for debugging
         return {"total_score_100": 0, "justification": f"Error: {e}"}
 
 
@@ -136,125 +333,185 @@ def score_resume_with_llm_sync(resume_bytes: bytes) -> dict:
         return {"total_score_100": 0, "justification": "Error: Invalid LLM Provider"}
 
 
-# --- 5. "BETA ENGINE" GITHUB SCORER (v2.0 HEURISTIC) ---
-def get_github_score_v2_heuristic(username: str) -> int:
+# --- 5. "DEEP TECH" GITHUB ENGINE (v4.2) ---
+
+# "Key File" Heuristics for the scraper
+KEY_FILE_NAMES = [
+    "package.json", "requirements.txt", "pom.xml", "go.mod", "docker-compose.yml", "Dockerfile",
+    ".github/workflows/main.yml", ".github/workflows/ci.yml"
+]
+KEY_FILE_EXTENSIONS = [
+    ".py", ".js", ".jsx", ".ts", ".tsx", ".java", ".go", ".rs"
+]
+
+def _get_github_context_packet(username: str, client: httpx.Client) -> dict:
     """
-    This is the NEW "Beta Engine" (v2.0) Heuristic.
-    It implements the General Rubric PDF by making multiple API calls.
-    It is SYNCHRONOUS.
+    This is the "Hybrid Scraper" (v4.2).
+    It implements the "Pinned or Top 3" logic and scrapes raw code.
     """
-    print(f"--- [Worker] GitHub Scorer (v2.0 Heuristic): Starting for {username} ---")
-    total_score = 0
-    headers = {"Authorization": f"token {os.environ.get('GITHUB_PAT')}"}
-    
-    # Define our rubric weights
-    WEIGHTS = {
-        'profile_polish': 5,
-        'pinned_repos': 5,
-        'readme_quality': 15,
-        'code_structure_and_tests': 35,
-        'commit_history': 20,
-        'branching': 10,
-        'oss_contribs': 5,
-        'community_signals': 5
+    print(f"--- [v4.2 Scraper] Starting for {username} ---")
+    context_packet = {
+        "user_profile": {},
+        "analysis_method": "top_repo_fallback", # Default
+        "analyzed_repos": [],
+        "oss_contributions_count": 0
     }
+
+    # 1. Get User Profile
+    user_url = f"https://api.github.com/users/{username}"
+    user_response = client.get(user_url)
+    if user_response.status_code != 200:
+        raise Exception(f"GitHub user '{username}' not found.")
     
+    user_data = user_response.json()
+    context_packet["user_profile"] = {
+        "bio": user_data.get("bio"),
+        "name": user_data.get("name"),
+        "followers": user_data.get("followers", 0)
+    }
+
+    # 2. --- "Path A/B" Hybrid Logic ---
+    repo_list = []
+    
+    # Path A: Try to get Pinned Repos first
+    graphql_query = {"query": f'query {{ user(login: "{username}") {{ pinnedItems(first: 6, types: REPOSITORY) {{ nodes {{ ... on Repository {{ name, description, stargazerCount, forkCount, defaultBranchRef {{ name }} }} }} }} }} }}'}
+    gql_response = client.post("https://api.github.com/graphql", json=graphql_query)
+    
+    if gql_response.status_code == 200:
+        repo_nodes = gql_response.json().get("data", {}).get("user", {}).get("pinnedItems", {}).get("nodes", [])
+        repo_nodes = [r for r in repo_nodes if r] # Filter out Nones
+        
+        if len(repo_nodes) >= 2:
+            print(f"--- [v4.2 Scraper] Path A: Found {len(repo_nodes)} pinned repos. ---")
+            context_packet["analysis_method"] = "pinned"
+            repo_list = repo_nodes[:3] # Analyze top 3 pinned
+        
+    # Path B: "Top Repo Fallback"
+    if not repo_list:
+        print(f"--- [v4.2 Scraper] Path B: No pinned repos. Falling back to top 3 active repos. ---")
+        context_packet["analysis_method"] = "top_repo_fallback"
+        repo_url = f"https://api.github.com/users/{username}/repos?sort=pushed&per_page=3"
+        repo_response = client.get(repo_url)
+        if repo_response.status_code == 200:
+            top_repos = repo_response.json()
+            # Need to re-fetch basic data we would have gotten from GraphQL
+            for repo in top_repos:
+                repo_list.append({
+                    "name": repo.get("name"),
+                    "description": repo.get("description"),
+                    "stargazerCount": repo.get("stargazers_count", 0),
+                    "forkCount": repo.get("forks_count", 0),
+                    "defaultBranchRef": {"name": repo.get("default_branch", "main")}
+                })
+
+    # 3. --- "Deep Scraper" Logic ---
+    # We now have our 3 repos. Let's analyze them.
+    for repo in repo_list:
+        repo_name = repo.get("name")
+        if not repo_name:
+            continue
+            
+        print(f"--- [v4.2 Scraper] Analyzing repo: {repo_name} ---")
+        repo_url = f"https://api.github.com/repos/{username}/{repo_name}"
+        default_branch = repo.get("defaultBranchRef", {}).get("name", "main")
+
+        # Get README
+        readme_content = ""
+        readme_res = client.get(f"{repo_url}/readme")
+        if readme_res.status_code == 200:
+            readme_data = readme_res.json()
+            readme_content = httpx.get(readme_data.get("download_url")).text
+            if len(readme_content) > 1000:
+                readme_content = readme_content[:1000] + "... (truncated)"
+
+        # Get File List (Tree)
+        file_list = []
+        tree_res = client.get(f"{repo_url}/git/trees/{default_branch}?recursive=1")
+        if tree_res.status_code == 200:
+            tree_data = tree_res.json().get("tree", [])
+            file_list = [item.get("path") for item in tree_data if item.get("type") == "blob"]
+
+        # Get Commits
+        commit_messages = []
+        commits_res = client.get(f"{repo_url}/commits?per_page=10")
+        if commits_res.status_code == 200:
+            commit_messages = [c.get("commit", {}).get("message", "") for c in commits_res.json()]
+
+        # Get Branch Count
+        branches_res = client.get(f"{repo_url}/branches")
+        branch_count = len(branches_res.json()) if branches_res.status_code == 200 else 1
+
+        # Get PR Count
+        prs_res = client.get(f"{repo_url}/pulls?state=all")
+        pull_request_count = len(prs_res.json()) if prs_res.status_code == 200 else 0
+
+        # "Key File" Heuristic & Raw Code Scrape
+        raw_code_snippets = []
+        key_files_found = [f for f in file_list if os.path.basename(f).lower() in KEY_FILE_NAMES]
+        
+        # If no "key files", find top 3 by extension
+        if not key_files_found:
+            key_files_found = [f for f in file_list if os.path.splitext(f)[1].lower() in KEY_FILE_EXTENSIONS][:3]
+        
+        for file_path in key_files_found[:5]: # Max 5 key files
+            print(f"--- [v4.2 Scraper] Fetching raw code for: {file_path} ---")
+            file_content_res = client.get(f"https://api.github.com/repos/{username}/{repo_name}/contents/{file_path}")
+            if file_content_res.status_code == 200:
+                file_data = file_content_res.json()
+                if file_data.get("encoding") == "base64" and file_data.get("content"):
+                    # We can't send huge files. Truncate after decoding.
+                    raw_content = httpx.get(file_data.get("download_url")).text
+                    if len(raw_content) > 1500:
+                        raw_content = raw_content[:1500] + "... (truncated)"
+                    
+                    raw_code_snippets.append({
+                        "file_name": file_path,
+                        "content": raw_content,
+                        "language": os.path.splitext(file_path)[1]
+                    })
+
+        context_packet["analyzed_repos"].append({
+            "name": repo_name,
+            "description": repo.get("description"),
+            "primary_language": repo.get("language"), # From fallback, or we can get this
+            "readme_content": readme_content,
+            "file_list": file_list,
+            "commit_messages": commit_messages,
+            "branch_count": branch_count,
+            "pull_request_count": pull_request_count,
+            "stargazerCount": repo.get("stargazerCount", 0),
+            "raw_code_snippets": raw_code_snippets
+        })
+
+    # 4. Fetch OSS Contributions
+    contrib_url = f"https://api.github.com/search/issues?q=author:{username}+is:pr+is:merged+-user:{username}"
+    contrib_response = client.get(contrib_url)
+    if contrib_response.status_code == 200:
+        context_packet["oss_contributions_count"] = contrib_response.json().get("total_count", 0)
+
+    print("--- [v4.2 Scraper] Context packet built. ---")
+    return context_packet
+
+def get_github_score_v4_2_llm(username: str) -> int:
+    """
+    This is the "Brain Handoff" (v4.2).
+    It calls the Scraper, then calls the LLM with the new v2.2 prompt.
+    """
     try:
-        with httpx.Client(headers=headers, timeout=20.0) as client:
-            
-            # --- 1. Profile Curation (Max 10 pts) ---
-            user_url = f"https://api.github.com/users/{username}"
-            user_response = client.get(user_url)
-            if user_response.status_code != 200: 
-                print(f"--- [Worker] GitHub Scorer: ERROR - User {username} not found. ---")
-                return 0
-            user_data = user_response.json()
-            
-            # 1.1: Profile Polish (5 pts)
-            if user_data.get("bio") and user_data.get("name"):
-                total_score += WEIGHTS['profile_polish']
-            elif user_data.get("bio") or user_data.get("name"):
-                total_score += 2
-            
-            # 1.2: Pinned Repos (5 pts)
-            graphql_query = {"query": f'query {{ user(login: "{username}") {{ pinnedItems(first: 6, types: REPOSITORY) {{ nodes {{ ... on Repository {{ name description, stargazerCount }} }} }} }} }}'}
-            gql_response = client.post("https://api.github.com/graphql", json=graphql_query)
-            repo_nodes = []
-            if gql_response.status_code == 200:
-                repo_nodes = gql_response.json().get("data", {}).get("user", {}).get("pinnedItems", {}).get("nodes", [])
-            
-            if repo_nodes and len(repo_nodes) >= 2:
-                total_score += WEIGHTS['pinned_repos']
-            elif repo_nodes:
-                total_score += 1
-
-            # --- 2. Project Quality & Depth (Max 50 pts) ---
-            repo_analysis_score = 0
-            repo_url = "" # Define repo_url in the outer scope
-            if repo_nodes:
-                # We will analyze *one* pinned repo to save time/API calls
-                repo_name = repo_nodes[0].get("name")
-                repo_url = f"https://api.github.com/repos/{username}/{repo_name}"
-                
-                # 2.1 README Quality (15 pts)
-                readme_response = client.get(f"{repo_url}/readme")
-                if readme_response.status_code == 200 and readme_response.json().get("size", 0) > 200: # Check if README has > 200 bytes
-                    repo_analysis_score += WEIGHTS['readme_quality']
-                elif readme_response.status_code == 200:
-                    repo_analysis_score += 7
-
-                # 2.2 & 2.3 Code Structure & Testing (35 pts)
-                tree_response = client.get(f"{repo_url}/git/trees/main?recursive=1") # Assumes 'main' branch
-                if tree_response.status_code != 200: # Try 'master' as fallback
-                    tree_response = client.get(f"{repo_url}/git/trees/master?recursive=1")
-                
-                if tree_response.status_code == 200:
-                    files = tree_response.json().get("tree", [])
-                    paths = {f.get("path", "").lower() for f in files}
-                    
-                    has_tests = any("test" in p or ".spec." in p or ".github/workflows" in p or "pytest.ini" in p for p in paths)
-                    has_src = any("src/" in p for p in paths)
-                    
-                    if has_tests and has_src:
-                        repo_analysis_score += WEIGHTS['code_structure_and_tests'] # (Elite)
-                    elif has_tests or has_src:
-                        repo_analysis_score += 20 # (Strong)
-                    else:
-                        repo_analysis_score += 5  # (Good)
-            
-            total_score += repo_analysis_score # Add up to 50 pts
-            
-            # --- 3. Engineering Craftsmanship (Max 30 pts) ---
-            # 3.1 Commit History
-            commits_response = client.get(f"{repo_url}/commits?per_page=10") if repo_url else None
-            commits = commits_response.json() if commits_response and commits_response.status_code == 200 else []
-            if len(commits) > 5: # More than 5 commits
-                total_score += WEIGHTS['commit_history']
-            elif len(commits) > 1: # More than "Initial Commit"
-                total_score += 10
-            
-            # 3.2 Branching
-            branches_response = client.get(f"{repo_url}/branches") if repo_url else None
-            if branches_response and branches_response.status_code == 200 and len(branches_response.json()) > 1:
-                total_score += WEIGHTS['branching']
-            
-            # --- 4. Community Engagement (Max 10 pts - "Bonus") ---
-            # 4.1 OSS Contributions
-            contrib_url = f"https://api.github.com/search/issues?q=author:{username}+is:pr+is:merged+-user:{username}"
-            contrib_response = client.get(contrib_url)
-            if contrib_response.status_code == 200 and contrib_response.json().get("total_count", 0) > 0:
-                total_score += WEIGHTS['oss_contribs']
-            
-            # 4.2 Stars/Forks
-            stars = repo_nodes[0].get("stargazerCount", 0) if repo_nodes else 0
-            if user_data.get("followers", 0) > 5 or stars > 5:
-                total_score += WEIGHTS['community_signals']
-                
-            print(f"--- [Worker] GitHub Scorer (v2.0 Heuristic): Score = {total_score}/100 ---")
-            return max(0, min(total_score, 100)) # Clamp score
-
+        # 1. Run the "Hybrid Scraper" to get the data
+        with httpx.Client(headers={"Authorization": f"token {GITHUB_PAT}"}, timeout=40.0) as client:
+            context_packet = _get_github_context_packet(username, client)
+        
+        # 2. Feed the "Context Packet" to the LLM "Brain"
+        print(f"--- [v4.2 Engine] Sending {len(context_packet['analyzed_repos'])} repos to LLM for final scoring... ---")
+        score_data = _call_gemini_api_sync(MASTER_GITHUB_PROMPT_V2_2, json.dumps(context_packet))
+        
+        github_score = score_data.get("total_score_100", 0)
+        print(f"--- [v4.2 Engine] LLM GitHub Score: {github_score}/100 ---")
+        return github_score
+        
     except Exception as e:
-        print(f"--- [Worker] GitHub Scorer (v2.0 Heuristic): CRITICAL ERROR --- {e}")
+        print(f"--- [v4.2 Engine] CRITICAL ERROR --- {e}")
         return 0
 
 
@@ -281,8 +538,8 @@ def run_deep_analysis(user_id: str, github_username: str, resume_path: str):
     resume_score = resume_score_data.get("total_score_100", 0)
     resume_justification = resume_score_data.get("justification", "Analysis complete.") # Get the justification
     
-    # 3. Score GitHub with NEW "Beta Engine" (v2.0 Heuristic)
-    github_score = get_github_score_v2_heuristic(github_username)
+    # 3. Score GitHub with NEW "Deep Tech Engine" (v4.2)
+    github_score = get_github_score_v4_2_llm(github_username)
     
     # 4. Calculate Final Score (NEW 70/30 WEIGHTING)
     showoff_score = int((resume_score * 0.7) + (github_score * 0.3))
