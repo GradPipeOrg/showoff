@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { motion } from 'framer-motion'
-import { Award, BarChart2, Github, LogOut, ArrowRight } from 'lucide-react'
+import { Award, BarChart2, Github, LogOut, ArrowRight, User, Briefcase } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 // Re-usable Google Icon
@@ -37,6 +37,11 @@ export default function LandingPage({ session, profile }) {
 
   const handleSignOut = () => {
     supabase.auth.signOut()
+  }
+
+  const handleRecruiterLogin = () => {
+    // For now, just redirect to B2B discover page without authentication
+    navigate('/b2b/discover')
   }
 
   // Determine the user's "state"
@@ -87,20 +92,40 @@ export default function LandingPage({ session, profile }) {
             <p className="text-sm sm:text-base md:text-lg lg:text-xl text-text-muted leading-relaxed">
               Get an AI-powered "Show-off Score" for your profile and let top companies find you.
             </p>
-            <motion.button
-              whileHover={{ scale: 1.02, boxShadow: '0 0 20px rgba(79, 70, 229, 0.5)' }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleGoogleLogin}
-              disabled={loading}
-              className="w-full sm:w-auto px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg shadow-sm 
+            
+            {/* Two Separate Sign-In Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-stretch sm:items-center">
+              {/* User/Candidate Sign-In */}
+              <motion.button
+                whileHover={{ scale: 1.02, boxShadow: '0 0 20px rgba(79, 70, 229, 0.5)' }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleGoogleLogin}
+                disabled={loading}
+                className="flex-1 sm:flex-initial px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg shadow-sm 
                          font-medium text-base sm:text-lg text-white bg-accent-primary 
                          hover:bg-accent-hover transition-all"
-            >
-              <span className="flex items-center justify-center gap-2 sm:gap-3">
-                <GoogleIcon />
-                Join with Google
-              </span>
-            </motion.button>
+              >
+                <span className="flex items-center justify-center gap-2 sm:gap-3">
+                  <User className="w-5 h-5" />
+                  <span className="hidden sm:inline">Sign In as </span>Candidate
+                </span>
+              </motion.button>
+
+              {/* Recruiter Sign-In */}
+              <motion.button
+                whileHover={{ scale: 1.02, boxShadow: '0 0 20px rgba(124, 58, 237, 0.5)' }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleRecruiterLogin}
+                className="flex-1 sm:flex-initial px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg shadow-sm 
+                         font-medium text-base sm:text-lg text-white bg-accent-violet 
+                         hover:bg-[#6d28d9] transition-all border border-white/10"
+              >
+                <span className="flex items-center justify-center gap-2 sm:gap-3">
+                  <Briefcase className="w-5 h-5" />
+                  <span className="hidden sm:inline">Sign In as </span>Recruiter
+                </span>
+              </motion.button>
+            </div>
           </div>
         )}
 
