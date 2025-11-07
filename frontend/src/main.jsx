@@ -11,6 +11,8 @@ import LeaderboardPage from './pages/LeaderboardPage.jsx'
 // B2B Recruiter Cockpit pages
 import DiscoverPage from './pages/b2b/DiscoverPage.jsx'
 import ProfilePage from './pages/b2b/ProfilePage.jsx'
+import JobPostingPage from './pages/b2b/JobPostingPage.jsx'
+import RecruiterCockpitPage from './pages/b2b/RecruiterCockpitPage.jsx'
 
 const router = createBrowserRouter([
   {
@@ -30,6 +32,18 @@ const router = createBrowserRouter([
     element: <LeaderboardPage />,
   },
   // B2B Recruiter Cockpit routes
+  {
+    path: '/b2b',
+    element: <RecruiterCockpitPage />,
+  },
+  {
+    path: '/b2b/dashboard',
+    element: <RecruiterCockpitPage />,
+  },
+  {
+    path: '/b2b/post-job',
+    element: <JobPostingPage />,
+  },
   {
     path: '/b2b/discover',
     element: <DiscoverPage />,

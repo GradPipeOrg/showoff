@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { motion } from 'framer-motion'
-import { Award, BarChart2, Github, LogOut, ArrowRight, User, Briefcase } from 'lucide-react'
+import { Award, BarChart2, LogOut, ArrowRight, User, Briefcase } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 // Re-usable Google Icon
@@ -40,8 +40,8 @@ export default function LandingPage({ session, profile }) {
   }
 
   const handleRecruiterLogin = () => {
-    // For now, just redirect to B2B discover page without authentication
-    navigate('/b2b/discover')
+    // For now, redirect recruiters to the recruiter cockpit (no auth yet)
+    navigate('/b2b')
   }
 
   // Determine the user's "state"
