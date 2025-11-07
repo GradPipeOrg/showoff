@@ -7,7 +7,12 @@ import './index.css'
 // Import our pages
 import UploadPage from './pages/UploadPage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
-import LeaderboardPage from './pages/LeaderboardPage.jsx' // 1. Import new page
+import LeaderboardPage from './pages/LeaderboardPage.jsx'
+// B2B Recruiter Cockpit pages
+import DiscoverPage from './pages/b2b/DiscoverPage.jsx'
+import ProfilePage from './pages/b2b/ProfilePage.jsx'
+import JobPostingPage from './pages/b2b/JobPostingPage.jsx'
+import RecruiterCockpitPage from './pages/b2b/RecruiterCockpitPage.jsx'
 
 const router = createBrowserRouter([
   {
@@ -23,8 +28,29 @@ const router = createBrowserRouter([
     element: <DashboardPage />, // Pratham's dashboard
   },
   {
-    path: '/leaderboard', // 2. Add new route
+    path: '/leaderboard',
     element: <LeaderboardPage />,
+  },
+  // B2B Recruiter Cockpit routes
+  {
+    path: '/b2b',
+    element: <RecruiterCockpitPage />,
+  },
+  {
+    path: '/b2b/dashboard',
+    element: <RecruiterCockpitPage />,
+  },
+  {
+    path: '/b2b/post-job',
+    element: <JobPostingPage />,
+  },
+  {
+    path: '/b2b/discover',
+    element: <DiscoverPage />,
+  },
+  {
+    path: '/b2b/profile/:id',
+    element: <ProfilePage />,
   },
 ])
 
