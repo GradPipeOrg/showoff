@@ -76,7 +76,7 @@ const ActiveAnalysisState = ({ userName }) => {
             <StepIcon index={index} />
             <span className={`text-sm ${
               index === currentStep ? 'text-text-primary font-medium' : 
-              index < currentStep ? 'text-text-muted line-through' : 'text-text-subtle'
+              index < currentStep ? 'text-text-muted' : 'text-text-subtle'
             }`}>
               {step.text}
             </span>
