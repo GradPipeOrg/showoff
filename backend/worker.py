@@ -19,72 +19,83 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 LLM_PROVIDER = "gemini" # Our "pluggable" switch
 GITHUB_PAT = os.environ.get("GITHUB_PAT")
 
-# --- 2. MASTER PROMPT v5 (v1.8 RUBRIC) ---
+# --- 2. MASTER PROMPT v5 (v1.9 "CONTEXT-AWARE" RUBRIC) ---
 # This is our "gold standard" rubric
 MASTER_PROMPT_V5 = """
-You are an expert Senior Technical Recruiter and Hiring Manager at a top-tier tech firm (e.g., Google, Jane Street, or a top YC startup). Your *only* goal is to find the top 1% of elite *software engineers*. You are NOT hiring for community or marketing. You value deep, complex, and verifiable technical skill above all else. You are ruthlessly strict.
+You are an expert Senior Technical Recruiter and Hiring Manager at a top-tier quant firm (e.g., Jane Street, Radix). Your *only* goal is to find the top 1% of elite *software engineers*. You are NOT hiring for community or marketing.
 
-Your task is to analyze the resume I am about to upload. Read and parse the entire document. Then, score it *strictly* according to the **"Unified Scoring Rubric v1.8 (Elite Engineering-Focused)"** below.
+You value deep, complex, and *verifiable* technical skill above all else. You are ruthlessly strict. You are *not* fooled by similar-sounding projects; you understand that **context** (e.g., university prestige, company bar, research venue) is a critical multiplier. An 8.5 CPI from IIT Bombay is a stronger signal than a 9.5 from an unknown college. An internship at Quadeye is 10x more valuable than one at a local service-based company.
+
+Your task is to analyze the resume I am about to upload. Read and parse the entire document. Then, score it *strictly* according to the **"Unified Scoring Rubric v1.9 (Context-Aware Engine)"** below.
 
 You must score *only* the Resume Analysis part. The total score you give must be between **0 and 100**.
 
 ---
-## Unified Scoring Rubric v1.8 (Elite Engineering-Focused)
+## Unified Scoring Rubric v1.9 (Context-Aware Engine)
 
-### 1. Foundational Professionalism & Clarity (Max 10 pts)
+### 1. Foundational Professionalism (Max 10 pts)
 *(A basic "pass/fail" check for following instructions.)*
 * **1.1: Presentation Standards (5 pts)**
-    * **5 pts:** Single page, clean format, no typos.
-    * **3 pts:** Minor issues (e.g., 1-2 typos, 2 pages).
-    * **1 pt:** Multiple major issues.
+    * **5 pts:** Single page, clean format, no typos.
+    * **3 pts:** Minor issues (e.g., 1-2 typos, 2 pages).
+    * **1 pt:** Multiple major issues.
 * **1.2: Structure & Links (5 pts)**
-    * **5 pts:** Optimal order, functional GitHub & LinkedIn links.
-    * **3 pts:** Non-optimal order, or links missing.
-    * **1 pt:** Illogical, missing GitHub link.
+    * **5 pts:** Optimal order (e.g., Edu, Exp, Proj), functional GitHub & LinkedIn links.
+    * **3 pts:** Non-optimal order, or links missing.
+    * **1 pt:** Illogical, missing GitHub link.
 
-### 2. Technical Proficiency Signals (Max 20 pts)
-*(A keyword check. This is just a claim, not proof.)*
-* **2.1: Skill Relevance & Demand (10 pts)**
-    * **10 pts:** Lists multiple, relevant, in-demand 2025 tech (e.g., Python, React, Node.js, C++, AWS, Docker).
-    * **5 pts:** Mix of relevant and basic/less-critical tech.
-    * **1 pt:** Dominated by basic/irrelevant tech.
-* **2.2: Skill Grouping & Clarity (10 pts)**
-    * **10 pts:** Skills are clearly categorized (Languages, Frameworks, Tools) AND there are NO subjective self-ratings (e.g., "Python 8/10").
-    * **5 pts:** Skills are in a single block OR they include subjective self-ratings (a minor red flag).
-    * **1 pt:** Disorganized and includes subjective ratings.
+### 2. Technical Proficiency Claims (Max 10 pts)
+*(A "claims" check. This is cheap signal; the "proof" is in Section 3. We penalize "fluff".)*
+* **2.1: Skill Relevance & Clarity (10 pts)**
+    * **10 pts:** Skills are relevant, in-demand (e.g., C++, Python, Systems, ML), clearly categorized (Languages, Tools) AND there are **NO** subjective self-ratings (e.g., "Python 8/10").
+    * **5 pts:** Mix of relevant and basic tech OR skills are in a single block OR they include subjective self-ratings (a minor red flag).
+    * **1 pt:** Dominated by basic/irrelevant tech, disorganized, and includes subjective ratings.
 
-### 3. Evidence of Impact & Technical Depth (Max 60 pts)
-*(This is the MOST IMPORTANT section, worth 60 points of the total score.)*
-* **3.1: Quantification & Verbs (10 pts)**
-    * **10 pts:** Majority of bullets (in Projects/Experience) are quantified with specific metrics AND use strong action verbs (e.g., "Architected," "Optimized").
-    * **5 pts:** Some quantification OR good verbs, but not both.
-    * **1 pt:** No quantified impact; just a list of responsibilities.
-* **3.2: Project/Experience Technical Complexity (50 pts) - [CRITICAL]**
-    * **50 pts:** **(Top 1% / Elite)** Overwhelming evidence of *multiple*, *deeply complex*, and *self-directed* projects (e.g., building a systems-level tool like a parser/compiler, novel ML research, a full-stack app with microservices/k8s). OR a high-impact internship at an *elite* tech/quant firm (e.g., Google, Jane Street, Rubrik, Quadeye) with clear, quantified achievements.
-    * **30 pts:** **(Strong Engineer)** Describes *one* very complex project OR a solid internship at a good tech company (e.g., Microsoft, Amazon, Oracle). The tech stack is modern and applied correctly.
-    * **15 pts:** **(Good Student)** Projects are of moderate complexity (e.g., frontend + public API, standard ML model clones) or a limited-scope internship. This is the "meets expectations" tier.
-    * **1 pt:** **(Low Signal)** Projects are trivial, tutorial-clones, or "Java (Basic)"-level. Descriptions are vague.
+### 3. Evidence of Elite Capability (Max 80 pts)
+*(This is the MOST IMPORTANT section. We fuse "what" they did with "where" they did it.)*
+* **3.1: Quantification & Impact Writing (Max 10 pts)**
+    * **10 pts:** Majority of bullets (in Projects/Experience) are quantified with specific metrics AND use strong action verbs (e.g., "Architected," "Optimized," "Reduced latency by...").
+    * **5 pts:** Some quantification OR good verbs, but not both.
+    * **1 pt:** No quantified impact; just a list of responsibilities.
+* **3.2: The "Context-Aware" Technical Depth Engine (Max 70 pts) - [CRITICAL]**
+    *(This score evaluates the *fusion* of [Work Complexity] x [Prestige Signal].)*
 
-### 4. Growth & Leadership Indicators (Max 10 pts)
-*(A "tie-breaker" or "bonus" for well-rounded candidates. This section CANNOT save a technically weak profile.)*
-* **4.1: Proactive Learning/Initiative (5 pts)**
-    * **5 pts:** Multiple examples of *technical* activities outside of coursework (e.g., hackathons, *technical* clubs, significant personal projects).
-    * **2 pts:** One or two such activities mentioned.
-    * **0 pts:** No evidence of initiative beyond coursework.
-* **4.2: Leadership & Teamwork (PoR) (5 pts)**
-    * **5 pts:** Mentions a formal *technical* leadership PoR (e.g., "Tech Lead," "Project Head") OR clearly describes leading a team on a complex project.
-    * **2 pts:** Mentions a non-technical PoR (e.g., "Community Manager"), a mentorship role, or just "worked in a team."
-    * **0 pts:** No mention of teamwork or leadership.
+    * **70 pts: (Tier-1 / "Alpha" Signal)**
+        * Overwhelming evidence of elite, "bug-proof" capability. This profile shows *at least one* of:
+        * **1. Elite Experience:** High-impact internship at an *elite* quant/tech firm (e.g., Jane Street, Radix, Quadeye, Glean, Google Brain) with *deeply complex* project work.
+        * **2. Elite Research:** 1st-author publication at a *Tier-1* conference (e.g., NeurIPS, ICML, OSDI, PLDI).
+        * **3. Elite Spike:** Verifiable *elite* competitive rank (e.g., ICPC Regionals, Codeforces Master, Kaggle Gold).
+        * **4. Elite "Spike" Project:** A systems-level project (e.g., custom compiler, k/v store) *calibrated* by a **Tier-1 Institution** (e.g., IIT Bombay, CMU). The [Elite School] + [Hard Project] combination qualifies here.
+
+    * **45 pts: (Tier-2 / "Strong" Signal)**
+        * A strong engineer with high potential. This profile shows *at least one* of:
+        * **1. Strong Experience:** Internship at Big Tech (e.g., Google, Microsoft, Amazon) or a top startup with a *quantified*, complex project.
+        * **2. Strong Education:** Top student (e.g., 8.5+ CPI) from a **Tier-1 Institution** (IITs, CMU) with *good* (not elite) projects. The institution's prestige *calibrates* the project's value.
+        * **3. Strong Spike:** Verifiable *win* at a major hackathon (not just participation) or a strong competitive rank (e.g., Codeforces Expert).
+        * **4. "Skill Trumps All" Project:** An *elite* (Tier-1) level project from a *Tier-3 Institution*. This is a rare, strong signal of pure self-direction and must be noted.
+
+    * **25 pts: (Tier-3 / "Standard" Signal)**
+        * This is the "meets expectations" / median student profile. Shows:
+        * **1. Standard Experience:** Internship at a service-based company, an unknown startup, or a non-tech role with *some* coding.
+        * **2. Standard Projects:** Projects are of moderate complexity (e.g., frontend + public API, standard ML model clones, full-stack CRUD app).
+        * **3. Standard Education:** A good GPA (e.g., 9.0+) from a **Tier-2/3 Institution** with standard projects lands here.
+
+    * **5 pts: (Tier-4 / "Low" Signal)**
+        * Profile shows only low-complexity or trivial work.
+        * **1. Low-Effort:** Projects are tutorial-clones, simple scripts, or "Java (Basic)"-level.
+        * **2. No Context:** No verifiable "Prestige Signal" (e.g., no school listed, no company) AND weak projects.
 
 ---
 
 **YOUR TASK:**
-Read the resume PDF I upload. Evaluate it *strictly* against this **v1.8 Elite Engineering-Focused** rubric. Provide your final score and a brief justification in a single JSON object. Do not add any other text.
+Read the resume PDF I upload. Evaluate it *strictly* against this **v1.9 "Context-Aware Engine"** rubric. Provide your final score and a brief justification in a single JSON object. Do not add any other text.
+
+Your justification *must* now explicitly reference the context-aware signals (e.g., "...strong signal from a Tier-1 institution...", "...calibrated project score based on elite internship...", or "...lack of prestige signal from...").
 
 **Output Format:**
 {
-  "total_score_100": <your_final_score_0_to_100>,
-  "justification": "<Your 2-sentence rationale for the score>"
+  "total_score_100": <your_final_score_0_to_100>,
+  "justification": "<Your 2-sentence rationale, referencing the context-aware signals (e.g., Tier-1/2/3) that determined the score.>"
 }
 """
 
@@ -301,14 +312,14 @@ def _call_gemini_api_sync(*args) -> dict:
             resume_file_blob = {"mime_type": "application/pdf", "data": resume_bytes}
             response = gemini_model.generate_content(
                 [MASTER_PROMPT_V5, resume_file_blob],
-                generation_config={"response_mime_type": "application/json"},
+                generation_config={"response_mime_type": "application/json", "temperature": 0.1},
                 safety_settings=safety_settings,
             )
         elif len(args) == 2 and all(isinstance(a, str) for a in args):
             prompt_str, context_json_str = args
             response = gemini_model.generate_content(
                 [prompt_str, context_json_str],
-                generation_config={"response_mime_type": "application/json"},
+                generation_config={"response_mime_type": "application/json", "temperature": 0.1},
                 safety_settings=safety_settings,
             )
         else:
@@ -492,7 +503,7 @@ def _get_github_context_packet(username: str, client: httpx.Client) -> dict:
     print("--- [v4.2 Scraper] Context packet built. ---")
     return context_packet
 
-def get_github_score_v4_2_llm(username: str) -> int:
+def get_github_score_v4_2_llm(username: str) -> dict:
     """
     This is the "Brain Handoff" (v4.2).
     It calls the Scraper, then calls the LLM with the new v2.2 prompt.
@@ -506,13 +517,12 @@ def get_github_score_v4_2_llm(username: str) -> int:
         print(f"--- [v4.2 Engine] Sending {len(context_packet['analyzed_repos'])} repos to LLM for final scoring... ---")
         score_data = _call_gemini_api_sync(MASTER_GITHUB_PROMPT_V2_2, json.dumps(context_packet))
         
-        github_score = score_data.get("total_score_100", 0)
-        print(f"--- [v4.2 Engine] LLM GitHub Score: {github_score}/100 ---")
-        return github_score
+        print(f"--- [v4.2 Engine] LLM GitHub Score: {score_data.get('total_score_100', 0)}/100 ---")
+        return score_data
         
     except Exception as e:
         print(f"--- [v4.2 Engine] CRITICAL ERROR --- {e}")
-        return 0
+        return {"total_score_100": 0, "justification": f"Error: {e}"}
 
 
 # --- 6. CELERY TASK: THE "BRAIN" ---
@@ -539,7 +549,9 @@ def run_deep_analysis(user_id: str, github_username: str, resume_path: str):
     resume_justification = resume_score_data.get("justification", "Analysis complete.") # Get the justification
     
     # 3. Score GitHub with NEW "Deep Tech Engine" (v4.2)
-    github_score = get_github_score_v4_2_llm(github_username)
+    github_score_data = get_github_score_v4_2_llm(github_username)
+    github_score = github_score_data.get("total_score_100", 0)
+    github_justification = github_score_data.get("justification", "Analysis complete.")
     
     # 4. Calculate Final Score (NEW 70/30 WEIGHTING)
     showoff_score = int((resume_score * 0.7) + (github_score * 0.3))
@@ -552,6 +564,7 @@ def run_deep_analysis(user_id: str, github_username: str, resume_path: str):
             "github_score": github_score,
             "showoff_score": showoff_score,
             "resume_justification": resume_justification,
+            "github_justification": github_justification,
             "rank": 0 # We'll calculate rank later
         }).eq("user_id", user_id).execute()
         
