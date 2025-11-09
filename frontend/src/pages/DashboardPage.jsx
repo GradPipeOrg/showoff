@@ -12,31 +12,83 @@ const LoadingSpinner = () => (
   </div>
 )
 
-// --- 2. "Processing" State Component ---
-const ProcessingState = ({ userName }) => (
-  <motion.div
-    initial={{ opacity: 0, y: -20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.5 }}
-    className="w-full max-w-xs sm:max-w-md md:max-w-lg mx-auto p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6
+// --- 2. "Active Analysis" State Component (v4.9 "Steve Jobs" Edition) ---
+const ActiveAnalysisState = ({ userName }) => {
+  const [currentStep, setCurrentStep] = useState(0)
+
+  const steps = [
+    { text: "Job submitted to 'Deep Tech' queue", duration: 2000 },
+    { text: "Downloading and parsing resume PDF", duration: 10000 },
+    { text: "Analyzing resume with v1.9 'Context-Aware' Engine", duration: 20000 },
+    { text: "Scraping GitHub repositories (v4.2 Scraper)", duration: 15000 },
+    { text: "Running 'Deep Tech' code analysis on snippets", duration: 20000 },
+    { text: "Calculating final 'Showoff Score'", duration: 10000 },
+    { text: "Finalizing results... (this can take a moment)", duration: 999999 }, // Stays here until unmounted
+  ]
+
+  useEffect(() => {
+    if (currentStep < steps.length - 1) {
+      const timer = setTimeout(() => {
+        setCurrentStep(currentStep + 1)
+      }, steps[currentStep].duration)
+      return () => clearTimeout(timer)
+    }
+  }, [currentStep, steps.length])
+
+  const StepIcon = ({ index }) => {
+    if (index < currentStep) {
+      return <Check className="h-5 w-5 text-accent-green" />
+    }
+    if (index === currentStep) {
+      return <div className="w-5 h-5 border-2 border-dashed rounded-full animate-spin border-accent-primary" />
+    }
+    return <Clock className="h-5 w-5 text-text-subtle" />
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="w-full max-w-xs sm:max-w-md md:max-w-lg mx-auto p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6
                rounded-2xl border border-white/10 
                bg-white/5 backdrop-blur-lg shadow-2xl mt-16 sm:mt-0"
-  >
-    <div className="text-center">
-      <Clock className="h-12 w-12 sm:h-16 sm:w-16 text-accent-primary mx-auto mb-4 animate-pulse" />
-      <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-text-primary mb-2">
-        Analyzing Your Profile, {userName}
-      </h1>
-      <p className="text-sm sm:text-base text-text-muted">
-        This may take 1-2 minutes. Our AI is performing a deep analysis of your
-        resume and GitHub.
+    >
+      <div className="text-center">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-text-primary mb-2">
+          Analyzing Your Profile, {userName}
+        </h1>
+        <p className="text-sm sm:text-base text-text-muted">
+          This <strong>Deep Tech analysis</strong> may take 60-100 seconds. We are
+          running your profile through our "Context-Aware" AI engines.
+        </p>
+      </div>
+
+      <div className="space-y-3 pt-4 border-t border-white/10">
+        {steps.map((step, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: index <= currentStep ? 1 : 0.4 }}
+            transition={{ duration: 0.3 }}
+            className="flex items-center gap-3"
+          >
+            <StepIcon index={index} />
+            <span className={`text-sm ${
+              index === currentStep ? 'text-text-primary font-medium' : 
+              index < currentStep ? 'text-text-muted line-through' : 'text-text-subtle'
+            }`}>
+              {step.text}
+            </span>
+          </motion.div>
+        ))}
+      </div>
+      <p className="text-xs sm:text-sm text-text-subtle text-center pt-4">
+        Note: This page will update automatically the <em>instant</em> your score is ready.
       </p>
-      <p className="text-xs sm:text-sm text-text-subtle mt-4">
-        This page will update automatically when complete.
-      </p>
-    </div>
-  </motion.div>
-)
+    </motion.div>
+  )
+}
 
 // --- 3. Re-usable Doughnut Chart Component ---
 const DoughnutChart = ({ score, title, size = 100, strokeWidth = 10, color = '#3b82f6' }) => {
@@ -439,7 +491,7 @@ export default function DashboardPage() {
           <LogOut size={16} />
           Sign Out
         </motion.button>
-        <ProcessingState userName={userName} />
+        <ActiveAnalysisState userName={userName} />
       </>
     )
   }
@@ -558,6 +610,17 @@ export default function DashboardPage() {
               color='#10b981' 
             />
             <p className="text-xs sm:text-sm text-text-muted">{profile.github_score} / 100</p>
+            
+            {/* --- NEW GITHUB JUSTIFICATION TEXT --- */}
+            {profile.github_justification && (
+              <blockquote className="mt-2 p-2 border-l-2 border-accent-green bg-white/5 text-left">
+                <p className="text-xs sm:text-sm text-text-muted italic">
+                  " {profile.github_justification} "
+                </p>
+              </blockquote>
+            )}
+            {/* --- END OF GITHUB JUSTIFICATION --- */}
+            
           </motion.div>
 
           {/* Coding Platform Score */}
