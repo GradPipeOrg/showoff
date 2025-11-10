@@ -107,6 +107,7 @@ export default function UploadPage() {
       if (response.data.status === "processing") {
         // Success! Redirect to the Dashboard.
         // The dashboard will show the "processing" state (in Phase 3).
+        mixpanel.track('Score Generation Success')
         navigate('/dashboard')
       } else {
         // This should not happen if the backend is correct
