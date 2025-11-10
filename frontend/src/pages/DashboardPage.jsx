@@ -4,6 +4,7 @@ import { supabase } from '../supabaseClient'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LogOut, Check, X, Clock, Award, User, Github, Briefcase, ChevronDown } from 'lucide-react'
+import mixpanel from 'mixpanel-browser'
 
 // --- 1. Re-usable Loading Spinner ---
 const LoadingSpinner = () => (
@@ -417,6 +418,13 @@ export default function DashboardPage() {
 
   // === SIMPLIFIED Main Effect ===
   useEffect(() => {
+    // Track page view
+    mixpanel.track('Page View', {
+      page_url: window.location.href,
+      page_title: 'Dashboard',
+      user_id: session?.user?.id,
+    })
+
     let realtimeChannel = null
 
     const initializeDashboard = async () => {

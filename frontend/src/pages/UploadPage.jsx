@@ -4,6 +4,7 @@ import { UploadCloud, Github } from 'lucide-react'
 import { motion } from 'framer-motion'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
+import mixpanel from 'mixpanel-browser'
 
 // Re-usable loading spinner
 const LoadingSpinner = () => (
@@ -22,6 +23,13 @@ export default function UploadPage() {
 
   // NEW: Auth protection logic
   useEffect(() => {
+    // Track page view
+    mixpanel.track('Page View', {
+      page_url: window.location.href,
+      page_title: 'Upload',
+      user_id: session?.user?.id,
+    })
+
     const fetchSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {

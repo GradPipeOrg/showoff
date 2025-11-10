@@ -3,6 +3,7 @@ import { supabase } from '../supabaseClient'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Trophy } from 'lucide-react'
+import mixpanel from 'mixpanel-browser'
 
 // Re-usable loading spinner
 const LoadingSpinner = () => (
@@ -28,6 +29,13 @@ export default function LeaderboardPage() {
   const navigate = useNavigate()
 
   useEffect(() => {
+    // Track page view
+    mixpanel.track('Page View', {
+      page_url: window.location.href,
+      page_title: 'Leaderboard',
+      user_id: session?.user?.id,
+    })
+
     const fetchData = async () => {
       // 1. Auth Protection
       const { data: { session } } = await supabase.auth.getSession()
