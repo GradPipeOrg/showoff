@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Trophy } from 'lucide-react'
+import { ArrowLeft, Trophy, MessageSquare, Send, CheckCircle, XCircle } from 'lucide-react'
 import mixpanel from 'mixpanel-browser'
 
 // Re-usable loading spinner
@@ -18,6 +18,110 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 }
 
+// --- v4.9.13 "Hot Feedback" Modal ---
+const FeedbackModal = ({ session, setShowModal }) => {
+  const [feedbackText, setFeedbackText] = useState('')
+  const [state, setState] = useState('idle') // 'idle', 'loading', 'success', 'error'
+  const [error, setError] = useState('')
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (feedbackText.trim().length < 10) {
+      setError('Feedback must be at least 10 characters.')
+      return
+    }
+    setState('loading')
+    setError('')
+
+    const { data, error: dbError } = await supabase
+      .from('user_feedback')
+      .insert({
+        feedback_text: feedbackText,
+        user_id: session.user.id // "Bug-proof" RLS
+      })
+
+    if (dbError) {
+      console.error('Error submitting feedback:', dbError)
+      setError(`Error: ${dbError.message}`)
+      setState('error')
+    } else {
+      setState('success')
+      mixpanel.track('Feedback Submitted', { feedback_length: feedbackText.length })
+      setTimeout(() => setShowModal(false), 2000) // Close after 2s
+    }
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={() => state !== 'loading' && setShowModal(false)}
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+        className="w-full max-w-md bg-bg-primary border border-white/10 rounded-2xl shadow-xl p-6"
+        onClick={(e) => e.stopPropagation()} // Prevent closing on modal click
+      >
+        {state === 'success' ? (
+          <div className="text-center space-y-3 py-4">
+            <CheckCircle className="h-12 w-12 text-accent-green mx-auto" />
+            <h3 className="text-lg font-medium text-text-primary">Feedback Sent</h3>
+            <p className="text-sm text-text-muted">Thanks for helping us build a "bug-proof" product. LFG.</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <h3 className="text-lg font-medium text-text-primary">Submit "Bug-Proof" Feedback</h3>
+            <p className="text-sm text-text-muted">
+              Found a "bug"? Have a "gap-less" idea? We're listening.
+            </p>
+            <textarea
+              value={feedbackText}
+              onChange={(e) => setFeedbackText(e.target.value)}
+              placeholder="e.g., The GitHub score seems 'buggy'..."
+              className="w-full h-32 p-3 bg-white/5 border border-white/10 rounded-lg text-sm text-text-secondary placeholder-text-subtle focus:outline-none focus:ring-2 focus:ring-accent-focus focus:border-accent-focus"
+              disabled={state === 'loading'}
+            />
+            {error && (
+              <p className="text-sm text-red-400 flex items-center gap-2">
+                <XCircle size={16} />
+                {error}
+              </p>
+            )}
+            <div className="flex justify-end gap-3">
+              <motion.button
+                type="button"
+                onClick={() => setShowModal(false)}
+                disabled={state === 'loading'}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-text-muted bg-white/10 hover:bg-white/20 transition-colors"
+                whileTap={{ scale: 0.95 }}
+              >
+                Cancel
+              </motion.button>
+              <motion.button
+                type="submit"
+                disabled={state === 'loading'}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-accent-primary hover:bg-accent-hover transition-all disabled:opacity-50"
+                whileTap={{ scale: 0.95 }}
+              >
+                {state === 'loading' ? (
+                  <div className="w-5 h-5 border-2 border-dashed rounded-full animate-spin border-white" />
+                ) : (
+                  <Send size={16} />
+                )}
+                Submit
+              </motion.button>
+            </div>
+          </form>
+        )}
+        </motion.div>
+    </motion.div>
+  )
+}
 export default function LeaderboardPage() {
   const [session, setSession] = useState(null)
   const [leaderboard, setLeaderboard] = useState([])
@@ -28,6 +132,8 @@ export default function LeaderboardPage() {
   const profilesPerPage = 10; // For pagination
   const navigate = useNavigate()
 
+  // v4.9.13 "Hot Feedback" state
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false)
   useEffect(() => {
     // Track page view
     mixpanel.track('Page View', {
@@ -251,7 +357,34 @@ export default function LeaderboardPage() {
           </motion.div>
         )}
       </AnimatePresence>
-      
+
+      {/* --- v4.9.13 "Hot Feedback" Button --- */}
+      <div className="text-center border-t border-white/10 pt-4 sm:pt-6">
+        <motion.button
+          onClick={() => {
+            setShowFeedbackModal(true)
+            mixpanel.track('View Feedback Modal')
+          }}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium 
+                    text-text-muted bg-white/5 border border-white/10
+                    hover:text-text-primary hover:bg-white/10
+                    transition-colors"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <MessageSquare size={16} />
+          Got "bug-proof" feedback?
+        </motion.button>
+      </div>
+
+      <AnimatePresence>
+        {showFeedbackModal && (
+          <FeedbackModal 
+            session={session} 
+            setShowModal={setShowFeedbackModal} 
+          />
+        )}
+      </AnimatePresence>
       {/* --- Pagination --- */}
       <div className="flex justify-center mt-4 sm:mt-6">
         <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">

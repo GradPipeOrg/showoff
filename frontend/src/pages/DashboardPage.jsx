@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabaseClient'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LogOut, Check, X, Clock, Award, User, Github, Briefcase, ChevronDown } from 'lucide-react'
+import { LogOut, Check, X, Clock, Award, User, Github, Briefcase, ChevronDown, Linkedin, Twitter, Instagram } from 'lucide-react'
 import mixpanel from 'mixpanel-browser'
 
 // --- 1. Re-usable Loading Spinner ---
@@ -174,6 +174,76 @@ export default function DashboardPage() {
   const pollIntervalRef = useRef(null)
   const initialProfileLoadedRef = useRef(false)
   const hasExistingScoresRef = useRef(false)
+  
+  // === v4.9.13 "Showoff" Loop ===
+  const handleShare = (platform) => {
+    const score = profile.showoff_score?.toFixed(2)
+    const rank = profile.rank
+    const url = "https://showoff.gradpipe.com"
+    const text = `I just got my "Deep Tech" engineering score on Showoff! 🚀\n\nI'm ranked #${rank} with a score of ${score}/100. \n\nFind out how good you *really* are:`
+    
+    // Prefer the Web Share API when available (mobile-first, native sheet)
+    if (navigator?.share) {
+      try {
+        navigator.share({
+          title: `I'm Ranked #${rank} on Showoff!`,
+          text,
+          url
+        })
+        mixpanel.track('Share Score', { 'platform': platform || 'web-share', 'rank': rank, 'score': score, 'method': 'navigator.share' })
+        return
+      } catch (e) {
+        // fall through to platform-specific URLs
+      }
+    }
+    
+    let shareUrl = ""
+    if (platform === 'linkedin') {
+      // LinkedIn frequently ignores prefilled title/summary in modern UI.
+      // Fallback to copying the caption and opening the share page.
+      try {
+        if (navigator?.clipboard?.writeText) {
+          navigator.clipboard.writeText(`${text}\n${url}`)
+        }
+      } catch (e) {
+        // ignore clipboard errors
+      }
+      mixpanel.track('Share Score', { 'platform': 'linkedin', 'rank': rank, 'score': score, 'copied': true })
+      // Use official offsite share endpoint with URL; user pastes caption manually.
+      shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`
+      try {
+        setTimeout(() => {
+          // eslint-disable-next-line no-alert
+          alert('Your LinkedIn caption is copied. Paste it into the post composer.')
+        }, 100)
+      } catch {}
+    } else if (platform === 'twitter') {
+      const hashtags = 'ShowoffScore,DeepTech,GradPipe'
+      const via = 'GradPipe' // adjust if different handle
+      shareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}&hashtags=${encodeURIComponent(hashtags)}&via=${encodeURIComponent(via)}`
+      mixpanel.track('Share Score', { 'platform': 'twitter', 'rank': rank, 'score': score })
+    } else if (platform === 'instagram') {
+      try {
+        if (navigator?.clipboard?.writeText) {
+          navigator.clipboard.writeText(`${text}\n${url}`)
+        }
+      } catch (e) {
+        // ignore clipboard errors; still proceed to open IG
+      }
+      mixpanel.track('Share Score', { 'platform': 'instagram', 'rank': rank, 'score': score, 'copied': true })
+      shareUrl = 'https://www.instagram.com/create/story'
+      // Hint the user that caption is copied
+      try {
+        // Non-blocking UX; safe no-op if alerts are suppressed
+        setTimeout(() => {
+          // eslint-disable-next-line no-alert
+          alert('Your caption is copied. Paste it into your Instagram story.')
+        }, 100)
+      } catch {}
+    }
+    
+    window.open(shareUrl, '_blank')
+  }
 
   // === FIXED: Smart processing logic that understands re-analysis ===
   const shouldBeProcessing = (currentProfile = profile) => {
@@ -593,6 +663,44 @@ export default function DashboardPage() {
             />
           </div>
           <p className="text-sm sm:text-base text-text-muted">{profile.showoff_score?.toFixed(2) ?? '0.00'} / 100</p>
+          
+          {/* --- v4.9.13 "Showoff" Loop Buttons --- */}
+          <div className="flex justify-center gap-3 mt-4">
+            <motion.button
+              onClick={() => handleShare('linkedin')}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium 
+                       text-[#0A66C2] bg-[#0A66C2]/10 hover:bg-[#0A66C2]/20
+                       transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Linkedin size={16} />
+              Share
+            </motion.button>
+            <motion.button
+              onClick={() => handleShare('twitter')}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium 
+                       text-[#1DA1F2] bg-[#1DA1F2]/10 hover:bg-[#1DA1F2]/20
+                       transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Twitter size={16} />
+              Share
+            </motion.button>
+            <motion.button
+              onClick={() => handleShare('instagram')}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium 
+                       text-[#E1306C] bg-[#E1306C]/10 hover:bg-[#E1306C]/20
+                       transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Instagram size={16} />
+              Story
+            </motion.button>
+          </div>
+          {/* --- END "Showoff" Loop --- */}
         </div>
 
         {/* Individual Score Cards */}
