@@ -319,14 +319,14 @@ def _call_gemini_api_sync(*args) -> dict:
             resume_file_blob = {"mime_type": "application/pdf", "data": resume_bytes}
             response = gemini_model.generate_content(
                 [MASTER_PROMPT_V5, resume_file_blob],
-                generation_config={"response_mime_type": "application/json", "temperature": 0.1},
+                generation_config={"response_mime_type": "application/json", "temperature": 0.0},
                 safety_settings=safety_settings,
             )
         elif len(args) == 2 and all(isinstance(a, str) for a in args):
             prompt_str, context_json_str = args
             response = gemini_model.generate_content(
                 [prompt_str, context_json_str],
-                generation_config={"response_mime_type": "application/json", "temperature": 0.1},
+                generation_config={"response_mime_type": "application/json", "temperature": 0.0},
                 safety_settings=safety_settings,
             )
         else:
