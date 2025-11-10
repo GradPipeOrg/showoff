@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { motion } from 'framer-motion'
-import { Award, BarChart2, Github, LogOut, ArrowRight, UploadCloud, Cpu } from 'lucide-react'
+import { Award, BarChart2, Github, LogOut, ArrowRight, UploadCloud, Cpu, User, Briefcase } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 // Re-usable Google Icon
@@ -37,6 +37,11 @@ export default function LandingPage({ session, profile }) {
 
   const handleSignOut = () => {
     supabase.auth.signOut()
+  }
+
+  const handleRecruiterLogin = () => {
+    // For now, redirect recruiters to the recruiter cockpit (no auth yet)
+    navigate('/b2b')
   }
 
   // Determine the user's "state"
@@ -87,50 +92,39 @@ export default function LandingPage({ session, profile }) {
             <p className="text-sm sm:text-base md:text-lg lg:text-xl text-text-muted leading-relaxed">
               We built a v1.9 'Context-Aware' AI Engine that analyzes your Resume and GitHub to give you a 'Showoff Score', the same way a top tech recruiter would.
             </p>
-            <motion.button
-              whileHover={{ scale: 1.02, boxShadow: '0 0 20px rgba(79, 70, 229, 0.5)' }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleGoogleLogin}
-              disabled={loading}
-              className="w-full sm:w-auto px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg shadow-sm 
+            
+            {/* Two Separate Sign-In Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-stretch sm:items-center">
+              {/* User/Candidate Sign-In */}
+              <motion.button
+                whileHover={{ scale: 1.02, boxShadow: '0 0 20px rgba(79, 70, 229, 0.5)' }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleGoogleLogin}
+                disabled={loading}
+                className="flex-1 sm:flex-initial px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg shadow-sm 
                          font-medium text-base sm:text-lg text-white bg-accent-primary 
                          hover:bg-accent-hover transition-all"
-            >
-              <span className="flex items-center justify-center gap-2 sm:gap-3">
-                <GoogleIcon />
-                Join with Google
-              </span>
-            </motion.button>
-          
-            {/* --- NEW "How It Works" Section --- */}
-            <div className="pt-6 sm:pt-8 border-t border-white/10">
-              <h3 className="text-lg sm:text-xl font-semibold text-text-primary mb-4 sm:mb-6">How It Works</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 text-left">
-                {/* Step 1 */}
-                <div className="flex items-start gap-3 p-3 bg-white/5 rounded-lg border border-white/10">
-                  <UploadCloud className="w-5 h-5 text-accent-primary flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="font-bold text-text-primary">1. Upload Profile</h4>
-                    <p className="text-xs sm:text-sm text-text-muted">Submit your PDF resume and GitHub username.</p>
-                  </div>
-                </div>
-                {/* Step 2 */}
-                <div className="flex items-start gap-3 p-3 bg-white/5 rounded-lg border border-white/10">
-                  <Cpu className="w-5 h-5 text-accent-primary flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="font-bold text-text-primary">2. Get AI Analysis</h4>
-                    <p className="text-xs sm:text-sm text-text-muted">Our 'Context-Aware' engine runs a 'Deep Tech' analysis.</p>
-                  </div>
-                </div>
-                {/* Step 3 */}
-                <div className="flex items-start gap-3 p-3 bg-white/5 rounded-lg border border-white/10">
-                  <Award className="w-5 h-5 text-accent-primary flex-shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="font-bold text-text-primary">3. See Your Rank</h4>
-                    <p className="text-xs sm:text-sm text-text-muted">Get your 'Showoff Score' and see where you stack up on the global leaderboard.</p>
-                  </div>
-                </div>
-              </div>
+              >
+                <span className="flex items-center justify-center gap-2 sm:gap-3">
+                  <User className="w-5 h-5" />
+                  <span className="hidden sm:inline">Sign In as </span>Candidate
+                </span>
+              </motion.button>
+
+              {/* Recruiter Sign-In */}
+              <motion.button
+                whileHover={{ scale: 1.02, boxShadow: '0 0 20px rgba(124, 58, 237, 0.5)' }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleRecruiterLogin}
+                className="flex-1 sm:flex-initial px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg shadow-sm 
+                         font-medium text-base sm:text-lg text-white bg-accent-violet 
+                         hover:bg-[#6d28d9] transition-all border border-white/10"
+              >
+                <span className="flex items-center justify-center gap-2 sm:gap-3">
+                  <Briefcase className="w-5 h-5" />
+                  <span className="hidden sm:inline">Sign In as </span>Recruiter
+                </span>
+              </motion.button>
             </div>
           </div>
         )}
