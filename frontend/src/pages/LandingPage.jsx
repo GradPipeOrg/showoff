@@ -40,8 +40,8 @@ export default function LandingPage({ session, profile }) {
   }
 
   const handleRecruiterLogin = () => {
-    // For now, redirect recruiters to the recruiter cockpit (no auth yet)
-    navigate('/b2b')
+    // "YC-hack" v4.9.5: Hijack this button to point to our manual waitlist
+    navigate('/b2b/join')
   }
 
   // Determine the user's "state"

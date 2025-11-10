@@ -13,6 +13,7 @@ import DiscoverPage from './pages/b2b/DiscoverPage.jsx'
 import ProfilePage from './pages/b2b/ProfilePage.jsx'
 import JobPostingPage from './pages/b2b/JobPostingPage.jsx'
 import RecruiterCockpitPage from './pages/b2b/RecruiterCockpitPage.jsx'
+import B2BWaitlistPage from './pages/b2b/B2BWaitlistPage.jsx' // Our "YC-hack" v4.9.5
 
 const router = createBrowserRouter([
   {
@@ -51,6 +52,11 @@ const router = createBrowserRouter([
   {
     path: '/b2b/profile/:id',
     element: <ProfilePage />,
+  },
+  // "YC-hack" v4.9.5: Our manual B2B lead-gen form
+  {
+    path: '/b2b/join',
+    element: <B2BWaitlistPage />,
   },
 ])
 
