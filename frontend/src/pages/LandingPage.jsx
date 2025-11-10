@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { motion } from 'framer-motion'
-import { Award, BarChart2, LogOut, ArrowRight, User, Briefcase } from 'lucide-react'
+import { Award, BarChart2, Github, LogOut, ArrowRight, UploadCloud, Cpu, User, Briefcase } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 // Re-usable Google Icon
@@ -87,10 +87,10 @@ export default function LandingPage({ session, profile }) {
         {isLoggedOut && (
           <div className="space-y-4 sm:space-y-6">
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-text-primary leading-tight">
-              Stop Applying. Get Discovered.
+              Find Out How Good You <em>Really</em> Are.
             </h2>
             <p className="text-sm sm:text-base md:text-lg lg:text-xl text-text-muted leading-relaxed">
-              Get an AI-powered "Show-off Score" for your profile and let top companies find you.
+              We built a v1.9 'Context-Aware' AI Engine that analyzes your Resume and GitHub to give you a 'Showoff Score', the same way a top tech recruiter would.
             </p>
             
             {/* Two Separate Sign-In Buttons */}

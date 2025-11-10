@@ -124,7 +124,7 @@ const DoughnutChart = ({ score, title, size = 100, strokeWidth = 10, color = '#3
         />
       </svg>
       <div className="absolute text-center">
-        <span className="text-lg font-bold text-text-primary">{score}</span>
+        <span className="text-lg font-bold text-text-primary">{score?.toFixed(2) ?? '0.00'}</span>
       </div>
     </div>
   )
@@ -560,7 +560,7 @@ export default function DashboardPage() {
               color='#3b82f6' 
             />
           </div>
-          <p className="text-sm sm:text-base text-text-muted">{profile.showoff_score} / 100</p>
+          <p className="text-sm sm:text-base text-text-muted">{profile.showoff_score?.toFixed(2) ?? '0.00'} / 100</p>
         </div>
 
         {/* Individual Score Cards */}
@@ -580,7 +580,7 @@ export default function DashboardPage() {
               strokeWidth={8} 
               color='#f59e0b' 
             />
-            <p className="text-xs sm:text-sm text-text-muted">{profile.resume_score} / 100</p>
+            <p className="text-xs sm:text-sm text-text-muted">{profile.resume_score?.toFixed(2) ?? '0.00'} / 100</p>
             
             {/* --- NEW JUSTIFICATION TEXT --- */}
             {profile.resume_justification && (
@@ -609,7 +609,7 @@ export default function DashboardPage() {
               strokeWidth={8} 
               color='#10b981' 
             />
-            <p className="text-xs sm:text-sm text-text-muted">{profile.github_score} / 100</p>
+            <p className="text-xs sm:text-sm text-text-muted">{profile.github_score?.toFixed(2) ?? '0.00'} / 100</p>
             
             {/* --- NEW GITHUB JUSTIFICATION TEXT --- */}
             {profile.github_justification && (
