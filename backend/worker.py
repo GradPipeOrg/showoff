@@ -92,10 +92,13 @@ Read the resume PDF I upload. Evaluate it *strictly* against this **v1.9 "Contex
 
 Your justification *must* now explicitly reference the context-aware signals (e.g., "...strong signal from a Tier-1 institution...", "...calibrated project score based on elite internship...", or "...lack of prestige signal from...").
 
+Finally, provide a short, actionable 2-3 bullet point 'Roadmap' of the *most critical* actions this candidate must take to reach the next 'Tier' (e.g., "1. Get a technical internship...", "2. Quantify project impact..."). Use \n for newlines.
+
 **Output Format:**
 {
   "total_score_100": <your_final_score_0_to_100>,
-  "justification": "<Your 2-sentence rationale, referencing the context-aware signals (e.g., Tier-1/2/3) that determined the score.>"
+  "justification": "<Your 2-sentence rationale, referencing the context-aware signals (e.g., Tier-1/2/3) that determined the score.>",
+  "actionable_feedback": "<A 2-3 bullet point list (use \\n for newlines) of the most critical steps to improve the score.>"
 }
 """
 
@@ -269,7 +272,9 @@ You must score the packet against these rules.
 
 ## 3. Your Task
 
-Read the "GitHub Context Packet" (JSON) I provide. Evaluate it *strictly* against this **v2.2 "Deep-Tech"** rubric. Prioritize your analysis on the `raw_code_snippets`. Provide your final score and a brief justification in a single JSON object. Do not add any other text.
+Read the "GitHub Context Packet" (JSON) I provide. Evaluate it *strictly* against this **v2.2 "Deep-Tech"** rubric. Prioritize your analysis on the `raw_code_snippets`. Provide your final score, a brief justification, and an actionable roadmap in a single JSON object. Do not add any other text.
+
+Finally, provide a short, actionable 2-3 bullet point 'Roadmap' of the *most critical* actions this candidate must take to improve their GitHub score (e.g., "1. Add high-quality READMEs...", "2. Curate 3 Pinned Repos..."). Use \n for newlines.
 
 **Output Format:**
 
@@ -277,7 +282,9 @@ Read the "GitHub Context Packet" (JSON) I provide. Evaluate it *strictly* agains
 
   "total_score_100": <your_final_score_0_to_100>,
 
-  "justification": "<Your 2-sentence rationale focusing on the *code quality* and *project complexity*>"
+  "justification": "<Your 2-sentence rationale focusing on the *code quality* and *project complexity*>",
+
+  "actionable_feedback": "<A 2-3 bullet point list (use \\n for newlines) of the most critical steps to improve the score.>"
 
 }
 
@@ -327,7 +334,7 @@ def _call_gemini_api_sync(*args) -> dict:
         return json.loads(response.text)
     except Exception as e:
         print(f"--- [Worker] Gemini API ERROR: {e} ---")
-        return {"total_score_100": 0, "justification": f"Error: {e}"}
+        return {"total_score_100": 0, "justification": f"Error: {e}", "actionable_feedback": "Unable to generate feedback due to an error."}
 
 
 def score_resume_with_llm_sync(resume_bytes: bytes) -> dict:
@@ -341,7 +348,7 @@ def score_resume_with_llm_sync(resume_bytes: bytes) -> dict:
     #   return _call_deepseek_api_sync(resume_bytes)
     else:
         print(f"--- [Worker] ERROR: Unknown LLM Provider '{LLM_PROVIDER}' ---")
-        return {"total_score_100": 0, "justification": "Error: Invalid LLM Provider"}
+        return {"total_score_100": 0, "justification": "Error: Invalid LLM Provider", "actionable_feedback": "Unable to generate feedback due to configuration error."}
 
 
 # --- 5. "DEEP TECH" GITHUB ENGINE (v4.2) ---
@@ -522,7 +529,7 @@ def get_github_score_v4_2_llm(username: str) -> dict:
         
     except Exception as e:
         print(f"--- [v4.2 Engine] CRITICAL ERROR --- {e}")
-        return {"total_score_100": 0, "justification": f"Error: {e}"}
+        return {"total_score_100": 0, "justification": f"Error: {e}", "actionable_feedback": "Unable to generate feedback due to an error."}
 
 
 # --- 6. CELERY TASK: THE "BRAIN" ---
@@ -547,11 +554,13 @@ def run_deep_analysis(user_id: str, github_username: str, resume_path: str):
     resume_score_data = score_resume_with_llm_sync(resume_bytes)
     resume_score = resume_score_data.get("total_score_100", 0)
     resume_justification = resume_score_data.get("justification", "Analysis complete.") # Get the justification
+    resume_feedback = resume_score_data.get("actionable_feedback", "No feedback available.") # Get the roadmap
     
     # 3. Score GitHub with NEW "Deep Tech Engine" (v4.2)
     github_score_data = get_github_score_v4_2_llm(github_username)
     github_score = github_score_data.get("total_score_100", 0)
     github_justification = github_score_data.get("justification", "Analysis complete.")
+    github_feedback = github_score_data.get("actionable_feedback", "No feedback available.") # Get the roadmap
     
     # 4. Calculate Final Score (NEW 70/30 WEIGHTING)
     showoff_score = (resume_score * 0.7) + (github_score * 0.3)
@@ -565,6 +574,8 @@ def run_deep_analysis(user_id: str, github_username: str, resume_path: str):
             "showoff_score": showoff_score,
             "resume_justification": resume_justification,
             "github_justification": github_justification,
+            "resume_feedback": resume_feedback,
+            "github_feedback": github_feedback,
             "rank": 0 # We'll calculate rank later
         }).eq("user_id", user_id).execute()
         

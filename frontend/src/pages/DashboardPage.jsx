@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabaseClient'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LogOut, Check, X, Clock, Award, User, Github, Briefcase } from 'lucide-react'
+import { LogOut, Check, X, Clock, Award, User, Github, Briefcase, ChevronDown } from 'lucide-react'
 
 // --- 1. Re-usable Loading Spinner ---
 const LoadingSpinner = () => (
@@ -130,6 +130,25 @@ const DoughnutChart = ({ score, title, size = 100, strokeWidth = 10, color = '#3
   )
 }
 
+// --- 3.5. Re-usable Feedback Renderer ---
+const FeedbackRenderer = ({ feedback }) => {
+  if (!feedback) return null
+
+  // Split by newline, filter out empty strings
+  const feedbackItems = feedback.split('\n').filter(item => item.trim() !== '')
+  
+  return (
+    <ul className="list-disc list-inside space-y-1 pl-1">
+      {feedbackItems.map((item, index) => (
+        <li key={index} className="text-xs sm:text-sm text-text-muted">
+          {/* Remove leading numbers/bullets from the string itself */}
+          {item.replace(/^[\d.-]+\s*/, '')}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 // --- 4. Main Dashboard Component (COMPLETELY REWRITTEN) ---
 export default function DashboardPage() {
   const [session, setSession] = useState(null)
@@ -138,6 +157,10 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [b2bOptIn, setB2bOptIn] = useState(false)
   const [isUpdatingOptIn, setIsUpdatingOptIn] = useState(false)
+  
+  // v4.9.2 UI State for collapsible cards
+  const [showResumeDetails, setShowResumeDetails] = useState(false)
+  const [showGithubDetails, setShowGithubDetails] = useState(false)
   
   // CRITICAL FIX: Single source of truth for processing state
   const [isProcessing, setIsProcessing] = useState(false)
@@ -582,15 +605,44 @@ export default function DashboardPage() {
             />
             <p className="text-xs sm:text-sm text-text-muted">{profile.resume_score?.toFixed(2) ?? '0.00'} / 100</p>
             
-            {/* --- NEW JUSTIFICATION TEXT --- */}
-            {profile.resume_justification && (
-              <blockquote className="mt-2 p-2 border-l-2 border-accent-focus bg-white/5 text-left">
-                <p className="text-xs sm:text-sm text-text-muted italic">
-                  " {profile.resume_justification} "
-                </p>
-              </blockquote>
-            )}
-            {/* --- END OF JUSTIFICATION --- */}
+            {/* --- v4.9.2 "Actionable" Button --- */}
+            <motion.button
+              onClick={() => setShowResumeDetails(!showResumeDetails)}
+              className="mt-2 flex items-center gap-1 text-xs sm:text-sm text-accent-focus hover:text-accent-hover transition-colors"
+              whileTap={{ scale: 0.95 }}
+            >
+              <span>{showResumeDetails ? 'Hide' : 'Show'} Details</span>
+              <motion.div animate={{ rotate: showResumeDetails ? 180 : 0 }}>
+                <ChevronDown size={16} />
+              </motion.div>
+            </motion.button>
+
+            {/* --- v4.9.2 "Actionable" Content --- */}
+            <AnimatePresence>
+              {showResumeDetails && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="w-full mt-2 pt-2 border-t border-white/10 text-left space-y-3"
+                >
+                  {profile.resume_justification && (
+                    <blockquote className="p-2 border-l-2 border-accent-focus bg-white/5">
+                      <h4 className="text-xs sm:text-sm font-semibold text-text-primary mb-1">The "Why":</h4>
+                      <p className="text-xs sm:text-sm text-text-muted italic">
+                        " {profile.resume_justification} "
+                      </p>
+                    </blockquote>
+                  )}
+                  {profile.resume_feedback && (
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-semibold text-text-primary mb-1">The "How to Fix":</h4>
+                      <FeedbackRenderer feedback={profile.resume_feedback} />
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
             
           </motion.div>
 
@@ -611,15 +663,44 @@ export default function DashboardPage() {
             />
             <p className="text-xs sm:text-sm text-text-muted">{profile.github_score?.toFixed(2) ?? '0.00'} / 100</p>
             
-            {/* --- NEW GITHUB JUSTIFICATION TEXT --- */}
-            {profile.github_justification && (
-              <blockquote className="mt-2 p-2 border-l-2 border-accent-green bg-white/5 text-left">
-                <p className="text-xs sm:text-sm text-text-muted italic">
-                  " {profile.github_justification} "
-                </p>
-              </blockquote>
-            )}
-            {/* --- END OF GITHUB JUSTIFICATION --- */}
+            {/* --- v4.9.2 "Actionable" Button --- */}
+            <motion.button
+              onClick={() => setShowGithubDetails(!showGithubDetails)}
+              className="mt-2 flex items-center gap-1 text-xs sm:text-sm text-accent-green hover:text-accent-green/80 transition-colors"
+              whileTap={{ scale: 0.95 }}
+            >
+              <span>{showGithubDetails ? 'Hide' : 'Show'} Details</span>
+              <motion.div animate={{ rotate: showGithubDetails ? 180 : 0 }}>
+                <ChevronDown size={16} />
+              </motion.div>
+            </motion.button>
+            
+            {/* --- v4.9.2 "Actionable" Content --- */}
+            <AnimatePresence>
+              {showGithubDetails && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="w-full mt-2 pt-2 border-t border-white/10 text-left space-y-3"
+                >
+                  {profile.github_justification && (
+                    <blockquote className="p-2 border-l-2 border-accent-green bg-white/5">
+                      <h4 className="text-xs sm:text-sm font-semibold text-text-primary mb-1">The "Why":</h4>
+                      <p className="text-xs sm:text-sm text-text-muted italic">
+                        " {profile.github_justification} "
+                      </p>
+                    </blockquote>
+                  )}
+                  {profile.github_feedback && (
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-semibold text-text-primary mb-1">The "How to Fix":</h4>
+                      <FeedbackRenderer feedback={profile.github_feedback} />
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
             
           </motion.div>
 
