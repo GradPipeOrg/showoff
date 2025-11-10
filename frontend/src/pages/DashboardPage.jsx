@@ -489,6 +489,7 @@ export default function DashboardPage() {
       alert('Failed to update opt-in status. Please try again.')
     } else {
       setB2bOptIn(newOptInStatus)
+      mixpanel.track('Candidate B2B Opt-in', { 'opt_in_status': newOptInStatus })
     }
     setIsUpdatingOptIn(false)
   }
@@ -615,7 +616,7 @@ export default function DashboardPage() {
             
             {/* --- v4.9.2 "Actionable" Button --- */}
             <motion.button
-              onClick={() => setShowResumeDetails(!showResumeDetails)}
+              onClick={() => { if (!showResumeDetails) { mixpanel.track('View Score Details', { 'card': 'resume' }) }; setShowResumeDetails(!showResumeDetails) }}
               className="mt-2 flex items-center gap-1 text-xs sm:text-sm text-accent-focus hover:text-accent-hover transition-colors"
               whileTap={{ scale: 0.95 }}
             >
@@ -673,7 +674,7 @@ export default function DashboardPage() {
             
             {/* --- v4.9.2 "Actionable" Button --- */}
             <motion.button
-              onClick={() => setShowGithubDetails(!showGithubDetails)}
+              onClick={() => { if (!showGithubDetails) { mixpanel.track('View Score Details', { 'card': 'github' }) }; setShowGithubDetails(!showGithubDetails) }}
               className="mt-2 flex items-center gap-1 text-xs sm:text-sm text-accent-green hover:text-accent-green/80 transition-colors"
               whileTap={{ scale: 0.95 }}
             >
