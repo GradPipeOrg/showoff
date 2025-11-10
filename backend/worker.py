@@ -554,7 +554,7 @@ def run_deep_analysis(user_id: str, github_username: str, resume_path: str):
     github_justification = github_score_data.get("justification", "Analysis complete.")
     
     # 4. Calculate Final Score (NEW 70/30 WEIGHTING)
-    showoff_score = int((resume_score * 0.7) + (github_score * 0.3))
+    showoff_score = (resume_score * 0.7) + (github_score * 0.3)
     
     # 5. Save *ALL* scores to Supabase
     print(f"--- [Worker] Saving scores for {user_id}: R={resume_score}, G={github_score}, Total={showoff_score} ---")

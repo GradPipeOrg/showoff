@@ -184,7 +184,7 @@ export default function LeaderboardPage() {
                         </td>
                         <td className="whitespace-nowrap py-2 sm:py-4 pl-2 sm:pl-3 pr-2 sm:pr-4 text-right text-xs sm:text-sm font-medium">
                           <span className="text-lg sm:text-xl font-bold text-text-primary">
-                            {profile.showoff_score}
+                            {profile.showoff_score?.toFixed(2) ?? '0.00'}
                           </span>
                         </td>
                       </motion.tr>
@@ -226,7 +226,7 @@ export default function LeaderboardPage() {
                       </span>
                     </div>
                     <span className="text-base sm:text-lg font-bold text-text-primary flex-shrink-0">
-                      {profile.showoff_score}
+                      {profile.showoff_score?.toFixed(2) ?? '0.00'}
                     </span>
                   </div>
                   <div className="w-full bg-white/10 rounded-full h-1.5 sm:h-2">

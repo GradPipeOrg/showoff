@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { motion } from 'framer-motion'
-import { Award, BarChart2, Github, LogOut, ArrowRight } from 'lucide-react'
+import { Award, BarChart2, Github, LogOut, ArrowRight, UploadCloud, Cpu } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 // Re-usable Google Icon
@@ -82,10 +82,10 @@ export default function LandingPage({ session, profile }) {
         {isLoggedOut && (
           <div className="space-y-4 sm:space-y-6">
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-text-primary leading-tight">
-              Stop Applying. Get Discovered.
+              Find Out How Good You <em>Really</em> Are.
             </h2>
             <p className="text-sm sm:text-base md:text-lg lg:text-xl text-text-muted leading-relaxed">
-              Get an AI-powered "Show-off Score" for your profile and let top companies find you.
+              We built a v1.9 'Context-Aware' AI Engine that analyzes your Resume and GitHub to give you a 'Showoff Score', the same way a top tech recruiter would.
             </p>
             <motion.button
               whileHover={{ scale: 1.02, boxShadow: '0 0 20px rgba(79, 70, 229, 0.5)' }}
@@ -101,6 +101,37 @@ export default function LandingPage({ session, profile }) {
                 Join with Google
               </span>
             </motion.button>
+          
+            {/* --- NEW "How It Works" Section --- */}
+            <div className="pt-6 sm:pt-8 border-t border-white/10">
+              <h3 className="text-lg sm:text-xl font-semibold text-text-primary mb-4 sm:mb-6">How It Works</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 text-left">
+                {/* Step 1 */}
+                <div className="flex items-start gap-3 p-3 bg-white/5 rounded-lg border border-white/10">
+                  <UploadCloud className="w-5 h-5 text-accent-primary flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-bold text-text-primary">1. Upload Profile</h4>
+                    <p className="text-xs sm:text-sm text-text-muted">Submit your PDF resume and GitHub username.</p>
+                  </div>
+                </div>
+                {/* Step 2 */}
+                <div className="flex items-start gap-3 p-3 bg-white/5 rounded-lg border border-white/10">
+                  <Cpu className="w-5 h-5 text-accent-primary flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-bold text-text-primary">2. Get AI Analysis</h4>
+                    <p className="text-xs sm:text-sm text-text-muted">Our 'Context-Aware' engine runs a 'Deep Tech' analysis.</p>
+                  </div>
+                </div>
+                {/* Step 3 */}
+                <div className="flex items-start gap-3 p-3 bg-white/5 rounded-lg border border-white/10">
+                  <Award className="w-5 h-5 text-accent-primary flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="font-bold text-text-primary">3. See Your Rank</h4>
+                    <p className="text-xs sm:text-sm text-text-muted">Get your 'Showoff Score' and see where you stack up on the global leaderboard.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
