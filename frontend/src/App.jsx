@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabaseClient'
 import LandingPage from './pages/LandingPage' // Import the new LandingPage
+import mixpanel from 'mixpanel-browser'
 
 // Re-usable loading spinner
 const LoadingSpinner = () => (
@@ -35,12 +36,31 @@ function App() {
       
       if (session && _event === 'SIGNED_IN') {
         // New sign in, create/upsert profile record
+        // Identify user in Mixpanel
+        mixpanel.identify(session.user.id)
+        mixpanel.people.set({
+          '$name': session.user.email?.split('@')[0] || 'User',
+          '$email': session.user.email,
+        })
+        // Track Sign In event
+        mixpanel.track('Sign In', {
+          user_id: session.user.id,
+          login_method: 'google',
+          success: true,
+        })
         handleNewUser(session.user).then(() => {
           // After upsert, fetch the new profile data
           getProfile(session.user)
+          // Track Sign Up event (first time user)
+          mixpanel.track('Sign Up', {
+            user_id: session.user.id,
+            email: session.user.email,
+            signup_method: 'google',
+          })
         })
       } else if (!session) {
         // User signed out, stop loading
+        mixpanel.reset() // Reset Mixpanel on sign out
         setLoading(false)
       }
     })

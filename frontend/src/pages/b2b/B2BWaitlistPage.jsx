@@ -3,6 +3,7 @@ import { supabase } from '../../supabaseClient'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Send, Check } from 'lucide-react'
+import mixpanel from 'mixpanel-browser'
 
 export default function B2BWaitlistPage() {
   const [formData, setFormData] = useState({
@@ -40,10 +41,20 @@ export default function B2BWaitlistPage() {
         throw error
       }
 
-      // Success
+      // Success - Track Conversion event
+      mixpanel.track('Conversion', {
+        'Conversion Type': 'B2B Waitlist Signup',
+        'Conversion Value': 0,
+      })
       setSubmitted(true)
     } catch (error) {
       console.error('Error submitting B2B form:', error)
+      // Track error event
+      mixpanel.track('Error', {
+        error_type: 'form_submission',
+        error_message: error.message,
+        page_url: window.location.href,
+      })
       setError(`Failed to submit: ${error.message}. Please try again.`)
       setLoading(false)
     }

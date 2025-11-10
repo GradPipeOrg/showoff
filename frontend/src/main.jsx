@@ -4,6 +4,18 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import App from './App.jsx'
 import './index.css'
 
+// Import Mixpanel SDK
+import mixpanel from "mixpanel-browser";
+
+// Near entry of your product, init Mixpanel
+mixpanel.init("8ad683729e6487e22df733d62345288c", {
+    debug: true,
+    track_pageview: true,
+    persistence: "localStorage",
+    autocapture: true,
+    record_sessions_percent: 100,
+});
+
 // Import our pages
 import UploadPage from './pages/UploadPage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
