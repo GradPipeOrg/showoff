@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabaseClient'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LogOut, Check, X, Clock, Award, User, Github, Briefcase, ChevronDown, Linkedin, Twitter, Instagram } from 'lucide-react'
+import { LogOut, Check, X, Clock, Award, User, Github, Briefcase, ChevronDown, Linkedin, Twitter, Instagram, Sparkles, TrendingUp, Zap } from 'lucide-react'
 import mixpanel from 'mixpanel-browser'
 
 // --- 1. Re-usable Loading Spinner ---
@@ -703,6 +703,132 @@ export default function DashboardPage() {
           {/* --- END "Showoff" Loop --- */}
         </div>
 
+        {/* --- PROMINENT B2B Opt-in Card (v5.0 - High Visibility) --- */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5, type: "spring", stiffness: 200 }}
+          className={`relative overflow-hidden rounded-2xl border-2 transition-all duration-300
+            ${b2bOptIn 
+              ? 'bg-gradient-to-br from-accent-green/20 via-accent-green/10 to-accent-primary/10 border-accent-green shadow-lg shadow-accent-green/20' 
+              : 'bg-gradient-to-br from-accent-violet/20 via-accent-primary/15 to-accent-blue/10 border-accent-primary/50 shadow-lg shadow-accent-primary/10 hover:border-accent-primary hover:shadow-xl hover:shadow-accent-primary/20'
+            }`}
+        >
+          {/* Animated background glow */}
+          <div className={`absolute inset-0 opacity-30 ${b2bOptIn ? 'bg-accent-green' : 'bg-accent-primary'} blur-3xl animate-pulse`} />
+          
+          <motion.button
+            onClick={handleB2bOptInToggle}
+            disabled={isUpdatingOptIn}
+            className="relative w-full p-4 sm:p-6 text-left focus:outline-none focus:ring-2 focus:ring-accent-focus focus:ring-offset-2 focus:ring-offset-bg-primary rounded-2xl"
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+          >
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+              {/* Icon Section */}
+              <div className={`flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center transition-all duration-300
+                ${b2bOptIn 
+                  ? 'bg-accent-green/20 text-accent-green' 
+                  : 'bg-accent-primary/20 text-accent-primary'
+                }`}
+              >
+                {b2bOptIn ? (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 200 }}
+                  >
+                    <Sparkles className="w-7 h-7 sm:w-8 sm:h-8" />
+                  </motion.div>
+                ) : (
+                  <Briefcase className="w-7 h-7 sm:w-8 sm:h-8" />
+                )}
+              </div>
+
+              {/* Content Section */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className={`text-lg sm:text-xl font-bold transition-colors
+                    ${b2bOptIn ? 'text-accent-green' : 'text-text-primary'}
+                  `}>
+                    {b2bOptIn ? '✓ You\'re in the Talent Pool!' : 'Get Discovered by Top Companies'}
+                  </h3>
+                  {!b2bOptIn && (
+                    <motion.div
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <Zap className="w-5 h-5 text-accent-primary" />
+                    </motion.div>
+                  )}
+                </div>
+                <p className="text-sm sm:text-base text-text-muted leading-relaxed">
+                  {b2bOptIn 
+                    ? 'Recruiters can now discover your profile. You\'ll be notified when companies are interested!'
+                    : 'Join thousands of developers being discovered by elite tech companies. Turn on your profile visibility and unlock exclusive opportunities.'
+                  }
+                </p>
+                
+                {/* Benefits List (when not opted in) */}
+                {!b2bOptIn && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="mt-3 space-y-1.5"
+                  >
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-text-muted">
+                      <TrendingUp className="w-4 h-4 text-accent-green flex-shrink-0" />
+                      <span>Get matched with roles that fit your skills</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-text-muted">
+                      <Award className="w-4 h-4 text-accent-primary flex-shrink-0" />
+                      <span>Exclusive access to top-tier opportunities</span>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Toggle Button - Large and Prominent */}
+              <div className="flex-shrink-0 relative">
+                <motion.div
+                  className={`relative inline-flex items-center h-12 w-24 sm:h-14 sm:w-28 rounded-full transition-all duration-300 pointer-events-none
+                    ${b2bOptIn 
+                      ? 'bg-accent-green shadow-lg shadow-accent-green/30' 
+                      : 'bg-gray-700 shadow-lg'
+                    }
+                  `}
+                >
+                  <motion.div
+                    className={`absolute top-1 left-1 w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300
+                      ${b2bOptIn ? 'translate-x-12 sm:translate-x-14' : 'translate-x-0'}
+                    `}
+                    layout
+                  >
+                    {b2bOptIn ? (
+                      <motion.div
+                        initial={{ scale: 0, rotate: -180 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ type: "spring", stiffness: 200 }}
+                      >
+                        <Check className="w-5 h-5 sm:w-6 sm:h-6 text-accent-green" />
+                      </motion.div>
+                    ) : (
+                      <X className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400" />
+                    )}
+                  </motion.div>
+                  <span className="sr-only">Toggle Talent Pool</span>
+                </motion.div>
+                {isUpdatingOptIn && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-5 h-5 border-2 border-dashed rounded-full animate-spin border-white" />
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.button>
+        </motion.div>
+        {/* --- END Prominent B2B Opt-in --- */}
+
         {/* Individual Score Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {/* Resume Score */}
@@ -865,36 +991,6 @@ export default function DashboardPage() {
             View Full Leaderboard
           </motion.button>
         </div>
-
-        {/* B2B Opt-in Toggle */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.5 }}
-          className="p-2 sm:p-3 rounded-xl bg-white/5 border border-white/10 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0 sm:justify-between"
-        >
-          <div className="flex-1">
-            <h3 className="text-sm sm:text-base font-semibold text-text-primary">Join the Talent Pool</h3>
-            <p className="text-xs text-text-muted">
-              Allow companies to discover your profile for job opportunities.
-            </p>
-          </div>
-          <button
-            onClick={handleB2bOptInToggle}
-            disabled={isUpdatingOptIn}
-            className={`relative inline-flex flex-shrink-0 h-5 w-10 sm:h-6 sm:w-12 border-2 rounded-full cursor-pointer 
-                        transition-colors ease-in-out duration-200 focus:outline-none 
-                        ${b2bOptIn ? 'bg-accent-green border-accent-green' : 'bg-gray-700 border-gray-600'}`}
-          >
-            <span className="sr-only">Toggle B2B Opt-in</span>
-            <span
-              aria-hidden="true"
-              className={`pointer-events-none inline-block h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-white shadow 
-                          transform ring-0 transition ease-in-out duration-200 
-                          ${b2bOptIn ? 'translate-x-5 sm:translate-x-6' : 'translate-x-0'}`}
-            />
-          </button> 
-        </motion.div>
       </motion.div>
     </>
   )
