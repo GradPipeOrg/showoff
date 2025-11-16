@@ -751,7 +751,7 @@ export default function DashboardPage() {
                   <h3 className={`text-lg sm:text-xl font-bold transition-colors
                     ${b2bOptIn ? 'text-accent-green' : 'text-text-primary'}
                   `}>
-                    {b2bOptIn ? '✓ You\'re in the Talent Pool!' : 'Get Discovered by Top Companies'}
+                    {b2bOptIn ? '✓ You\'re in the Talent Pool!' : 'Get Discovered by Top Companies and Startups'}
                   </h3>
                   {!b2bOptIn && (
                     <motion.div
@@ -764,8 +764,8 @@ export default function DashboardPage() {
                 </div>
                 <p className="text-sm sm:text-base text-text-muted leading-relaxed">
                   {b2bOptIn 
-                    ? 'Recruiters can now discover your profile. You\'ll be notified when companies are interested!'
-                    : 'Join thousands of developers being discovered by elite tech companies. Turn on your profile visibility and unlock exclusive opportunities.'
+                    ? 'Recruiters can now discover your profile. You\'ll be notified when companies and startups are interested!'
+                    : 'Join thousands of developers being discovered by elite tech companies and startups. Turn on your profile visibility and unlock exclusive opportunities.'
                   }
                 </p>
                 
