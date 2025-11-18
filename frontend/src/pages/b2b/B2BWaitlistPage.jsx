@@ -198,7 +198,7 @@ export default function B2BWaitlistPage() {
                 ) : (
                   <Send size={18} className="sm:w-5 sm:h-5" />
                 )}
-                {loading ? 'Submitting...' : 'Join Waitlist'}
+                {loading ? 'Submitting...' : 'Deploy Your Recruiting Agent'}
               </span>
             </motion.button>
           </form>
