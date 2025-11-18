@@ -93,10 +93,10 @@ export default function B2BWaitlistPage() {
               <Check className="h-16 w-16 text-accent-green mx-auto" />
             </motion.div>
             <h2 className="text-2xl sm:text-3xl font-bold text-text-primary leading-tight">
-              You're on the list.
+              Your 90% problem has been solved.
             </h2>
             <p className="text-sm sm:text-base text-text-muted leading-relaxed">
-              Thanks, {formData.full_name}. We'll be in touch at {formData.work_email} shortly to start the semi-manual matching process.
+              Thanks, {formData.full_name}. We'll be in touch at {formData.work_email} shortly to start the agentic matching process.
             </p>
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -114,9 +114,9 @@ export default function B2BWaitlistPage() {
           </div>
         ) : (
           <form className="space-y-4 sm:space-y-6 text-left" onSubmit={handleSubmit}>
-            <h2 className="text-2xl sm:text-3xl font-bold text-text-primary text-center">Join the B2B Waitlist</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-text-primary text-center">GradPipe: Input Your Impossible Role.</h2>
             <p className="text-sm sm:text-base text-text-muted leading-relaxed text-center pb-2">
-              Get semi-manual, high-touch access to our pool of elite talent. Our AI Agent will match you with the top 1% of candidates.
+              Get high-touch access to our pool of elite talent. Our AI Agent will match you with the top 1% of candidates.
             </p>
           
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -170,7 +170,7 @@ export default function B2BWaitlistPage() {
             </div>
 
             <div>
-              <label htmlFor="ideal_candidate_desc" className="block text-xs sm:text-sm font-medium text-text-muted mb-2">Describe your "magic wand" ideal candidate (optional)</label>
+              <label htmlFor="ideal_candidate_desc" className="block text-xs sm:text-sm font-medium text-text-muted mb-2">Describe your ideal candidate (optional)</label>
               <textarea name="ideal_candidate_desc" id="ideal_candidate_desc" value={formData.ideal_candidate_desc} onChange={handleChange} rows="3"
                 placeholder="e.g., A 90+ score systems-level C++ dev who loves compilers..."
                 className="w-full px-3 sm:pr-4 py-2.5 sm:py-3 bg-white/5 border border-white/10 rounded-lg text-sm sm:text-base text-text-secondary placeholder-text-subtle focus:outline-none focus:ring-2 focus:ring-accent-focus focus:border-accent-focus"></textarea>
