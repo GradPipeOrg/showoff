@@ -1,8 +1,8 @@
 import os
 import json
 from celery import Celery
-from google.generativeai.types import HarmCategory, HarmBlockThreshold
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from supabase import create_client, Client
 import httpx # We'll use the sync client here
 from dotenv import load_dotenv
@@ -294,10 +294,31 @@ Finally, provide a short, actionable 2-3 bullet point 'Roadmap' of the *most cri
 celery_app = Celery("tasks", broker=REDIS_URL, backend=REDIS_URL)
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-genai.configure(api_key=GEMINI_API_KEY)
-gemini_model = genai.GenerativeModel(model_name="gemini-2.5-pro-preview-03-25")
+genai_client = genai.Client(api_key=GEMINI_API_KEY, http_options={"api_version": "v1alpha"})
 
 # --- 4. MODULAR LLM "ROUTER" (SYNC) ---
+
+def _build_text_content(text: str) -> types.Content:
+    return types.Content(role="user", parts=[types.Part(text=text)])
+
+
+def _build_pdf_part(resume_bytes: bytes) -> types.Part:
+    return types.Part(
+        inline_data=types.Blob(mime_type="application/pdf", data=resume_bytes),
+    )
+
+
+def _build_generation_config(
+    *, media_resolution: types.MediaResolution | None = None
+) -> types.GenerateContentConfig:
+    return types.GenerateContentConfig(
+        response_mime_type="application/json",
+        thinking_config=types.ThinkingConfig(
+            thinking_level=types.ThinkingLevel.HIGH,
+        ),
+        media_resolution=media_resolution,
+    )
+
 
 def _call_gemini_api_sync(*args) -> dict:
     """
@@ -308,26 +329,28 @@ def _call_gemini_api_sync(*args) -> dict:
     """
     print("--- [Worker] Calling Gemini API... ---")
     try:
-        safety_settings = {
-            HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-            HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-        }
         if len(args) == 1 and isinstance(args[0], (bytes, bytearray)):
             resume_bytes = args[0]
-            resume_file_blob = {"mime_type": "application/pdf", "data": resume_bytes}
-            response = gemini_model.generate_content(
-                [MASTER_PROMPT_V5, resume_file_blob],
-                generation_config={"response_mime_type": "application/json", "temperature": 0.0},
-                safety_settings=safety_settings,
+            resume_contents = [
+                _build_text_content(MASTER_PROMPT_V5),
+                types.Content(role="user", parts=[_build_pdf_part(resume_bytes)]),
+            ]
+            response = genai_client.models.generate_content(
+                model="gemini-3-pro-preview",
+                contents=resume_contents,
+                config=_build_generation_config(
+                    media_resolution=types.MediaResolution.MEDIA_RESOLUTION_MEDIUM
+                ),
             )
         elif len(args) == 2 and all(isinstance(a, str) for a in args):
             prompt_str, context_json_str = args
-            response = gemini_model.generate_content(
-                [prompt_str, context_json_str],
-                generation_config={"response_mime_type": "application/json", "temperature": 0.0},
-                safety_settings=safety_settings,
+            response = genai_client.models.generate_content(
+                model="gemini-3-pro-preview",
+                contents=[
+                    _build_text_content(prompt_str),
+                    _build_text_content(context_json_str),
+                ],
+                config=_build_generation_config(),
             )
         else:
             raise ValueError("Invalid arguments for _call_gemini_api_sync")
