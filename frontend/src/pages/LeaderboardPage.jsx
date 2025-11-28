@@ -155,10 +155,9 @@ export default function LeaderboardPage() {
       // We must fix the RLS SELECT policy first for this to work
       const { data: boardData, error: boardError } = await supabase
         .from('profiles')
-        .select('user_id, email, showoff_score, b2b_opt_in') 
+        .select('user_id, email, showoff_score, b2b_opt_in')
         .not('showoff_score', 'is', null) // Only select users with a score
         .order('showoff_score', { ascending: false })
-        .limit(100) // Limit to top 100 for now
 
       if (boardError) {
         console.error('Error fetching leaderboard:', boardError)
