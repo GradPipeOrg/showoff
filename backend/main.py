@@ -1,8 +1,15 @@
 import uvicorn
 import os
+import json
+import random
+import string
+import smtplib
+import ssl
+import redis
+from email.message import EmailMessage
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from celery import Celery
 from supabase import create_client, Client
 from fastapi.concurrency import run_in_threadpool
@@ -20,6 +27,33 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY") # This MUST be your Service Role K
 if not SUPABASE_URL or not SUPABASE_KEY:
     print("--- CRITICAL ERROR: SUPABASE_URL or SUPABASE_KEY not set in .env file ---")
     exit(1)
+
+SMTP_HOST = os.environ.get("SMTP_HOST")
+SMTP_PORT = int(os.environ.get("SMTP_PORT", "465"))
+SMTP_USERNAME = os.environ.get("SMTP_USERNAME")
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")
+EMAIL_FROM = os.environ.get("EMAIL_FROM")
+
+# Redis client for OTP storage
+redis_client = redis.Redis.from_url(REDIS_URL, decode_responses=True) if REDIS_URL else None
+OTP_TTL_SECONDS = int(os.environ.get("OTP_TTL_SECONDS", "600"))
+OTP_PREFIX = "college_otp:"
+
+COLLEGE_DOMAINS = {
+    'iitb.ac.in': 'IIT Bombay',
+    'iitd.ac.in': 'IIT Delhi',
+    'iitm.ac.in': 'IIT Madras',
+    'iitk.ac.in': 'IIT Kanpur',
+    'iitkgp.ac.in': 'IIT Kharagpur',
+    'iitr.ac.in': 'IIT Roorkee',
+    'iitg.ac.in': 'IIT Guwahati',
+    'iitbhu.ac.in': 'IIT BHU',
+    'iith.ac.in': 'IIT Hyderabad',
+    'nitt.edu': 'NIT Trichy',
+    'nitk.edu.in': 'NIT Surathkal',
+    'nitw.ac.in': 'NIT Warangal',
+    'nitc.ac.in': 'NIT Calicut'
+}
 
 # --- 2. SETUP: FASTAPI, CELERY, SUPABASE ---
 app = FastAPI(title="GradPipe Showoff API (v3.1 - Job Submitter)")
@@ -47,6 +81,72 @@ app.add_middleware(
 class JobStatus(BaseModel):
     status: str
     message: str
+
+class CollegeSendOtpRequest(BaseModel):
+    email: EmailStr
+
+class CollegeVerifyOtpRequest(BaseModel):
+    email: EmailStr
+    otp: str
+    user_id: str
+
+class CollegeResetRequest(BaseModel):
+    user_id: str
+
+def _ensure_email_service_configured():
+    if not all([SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD, EMAIL_FROM]):
+        raise HTTPException(status_code=500, detail="Email service is not configured. Please set SMTP credentials.")
+
+def _ensure_redis_configured():
+    if not redis_client:
+        raise HTTPException(status_code=500, detail="OTP storage is not configured. Please set REDIS_URL.")
+
+def send_verification_email(recipient: str, otp: str, college_name: str):
+    _ensure_email_service_configured()
+    message = EmailMessage()
+    message["Subject"] = "GradPipe Showoff - College Verification Code"
+    message["From"] = EMAIL_FROM
+    message["To"] = recipient
+    body = f"""
+Hi there,
+
+Use the verification code below to confirm your enrollment at {college_name}:
+
+Verification Code: {otp}
+
+This code expires in {OTP_TTL_SECONDS // 60} minutes.
+
+If you did not initiate this verification, please ignore this email.
+
+— Team GradPipe Showoff
+"""
+    message.set_content(body)
+
+    context = ssl.create_default_context()
+    with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=context) as server:
+        server.login(SMTP_USERNAME, SMTP_PASSWORD)
+        server.send_message(message)
+
+def _store_otp(email: str, otp: str, college_name: str):
+    _ensure_redis_configured()
+    key = f"{OTP_PREFIX}{email.lower()}"
+    payload = json.dumps({"otp": otp, "college_name": college_name})
+    redis_client.setex(key, OTP_TTL_SECONDS, payload)
+
+def _retrieve_otp(email: str):
+    _ensure_redis_configured()
+    key = f"{OTP_PREFIX}{email.lower()}"
+    value = redis_client.get(key)
+    if not value:
+        return None
+    try:
+        return json.loads(value)
+    except json.JSONDecodeError:
+        return None
+
+def _delete_otp(email: str):
+    if redis_client:
+        redis_client.delete(f"{OTP_PREFIX}{email.lower()}")
 
 # --- 5. SYNCHRONOUS HELPER FOR UPLOADS ---
 def upload_to_storage_sync(path: str, file_bytes: bytes):
@@ -111,6 +211,62 @@ async def rank_profile(
         "status": "processing",
         "message": "Your profile analysis has started. Scores will appear on your dashboard."
     }
+
+@app.post("/college/send_otp")
+def send_college_otp(payload: CollegeSendOtpRequest):
+    email = payload.email.lower()
+    if "@" not in email:
+        raise HTTPException(status_code=400, detail="Invalid email address.")
+    domain = email.split("@")[-1]
+    college_name = COLLEGE_DOMAINS.get(domain)
+    if not college_name:
+        raise HTTPException(status_code=400, detail="Sorry, this college is not yet supported.")
+
+    otp = ''.join(random.choices(string.digits, k=6))
+    _store_otp(email, otp, college_name)
+
+    try:
+        send_verification_email(email, otp, college_name)
+    except Exception as exc:
+        _delete_otp(email)
+        print(f"--- [OTP] ERROR sending email: {exc}")
+        raise HTTPException(status_code=500, detail="Failed to send verification email.")
+
+    return {"status": "otp_sent", "college_name": college_name}
+
+@app.post("/college/verify_otp")
+def verify_college_otp(payload: CollegeVerifyOtpRequest):
+    email = payload.email.lower()
+    otp_record = _retrieve_otp(email)
+    if not otp_record:
+        raise HTTPException(status_code=400, detail="OTP expired or not found.")
+
+    if payload.otp != otp_record.get("otp"):
+        raise HTTPException(status_code=400, detail="Incorrect verification code.")
+
+    college_name = otp_record.get("college_name")
+    _delete_otp(email)
+
+    try:
+        update_response = supabase.from_("profiles").update({"verified_college": college_name}).eq("user_id", payload.user_id).execute()
+        if update_response.get("error"):
+            raise Exception(update_response["error"])
+    except Exception as exc:
+        print(f"--- [OTP] ERROR updating profile: {exc}")
+        raise HTTPException(status_code=500, detail="Failed to update profile with verified college.")
+
+    return {"college_name": college_name}
+
+@app.post("/college/reset_verification")
+def reset_college_verification(payload: CollegeResetRequest):
+    try:
+        update_response = supabase.from_("profiles").update({"verified_college": None}).eq("user_id", payload.user_id).execute()
+        if update_response.get("error"):
+            raise Exception(update_response["error"])
+    except Exception as exc:
+        print(f"--- [OTP] ERROR resetting profile: {exc}")
+        raise HTTPException(status_code=500, detail="Failed to reset college verification status.")
+    return {"status": "reset"}
 
 @app.get("/")
 def read_root():
