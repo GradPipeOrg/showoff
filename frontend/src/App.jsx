@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
+import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from './supabaseClient'
-import LandingPage from './pages/LandingPage' // Import the new LandingPage
+import mixpanel from 'mixpanel-browser'
 
 // Re-usable loading spinner
 const LoadingSpinner = () => (
@@ -13,6 +14,8 @@ function App() {
   const [session, setSession] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
+  const location = useLocation()
 
   useEffect(() => {
     // 1. Get initial session
@@ -30,17 +33,38 @@ function App() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('[App] Auth state change:', _event, session ? 'Session exists' : 'No session')
       setSession(session)
       setProfile(null) // Reset profile on any auth change
-      
+
       if (session && _event === 'SIGNED_IN') {
         // New sign in, create/upsert profile record
+        // Identify user in Mixpanel
+        mixpanel.identify(session.user.id)
+        mixpanel.people.set({
+          '$name': session.user.email?.split('@')[0] || 'User',
+          '$email': session.user.email,
+        })
+        // Track Sign In event
+        mixpanel.track('Sign In', {
+          user_id: session.user.id,
+          login_method: 'google',
+          success: true,
+        })
         handleNewUser(session.user).then(() => {
           // After upsert, fetch the new profile data
           getProfile(session.user)
+          // Track Sign Up event (first time user)
+          mixpanel.track('Sign Up', {
+            user_id: session.user.id,
+            email: session.user.email,
+            signup_method: 'google',
+          })
         })
       } else if (!session) {
+        console.log('[App] User signed out, clearing state')
         // User signed out, stop loading
+        mixpanel.reset() // Reset Mixpanel on sign out
         setLoading(false)
       }
     })
@@ -57,7 +81,7 @@ function App() {
         .select('*')
         .eq('user_id', user.id)
         .single()
-      
+
       if (error) throw error
       setProfile(data)
     } catch (error) {
@@ -73,11 +97,11 @@ function App() {
     const { error } = await supabase
       .from('profiles')
       .upsert(
-        { 
-          user_id: user.id, 
-          email: user.email 
-        }, 
-        { 
+        {
+          user_id: user.id,
+          email: user.email
+        },
+        {
           onConflict: 'user_id',
         }
       )
@@ -86,16 +110,39 @@ function App() {
 
   // --- Render Logic ---
 
+  useEffect(() => {
+    if (!loading && session && location.pathname === '/') {
+      // Check if user has a score (existing user)
+      if (profile?.showoff_score) {
+        navigate('/profile', { replace: true })
+      } else {
+        // New user or no score yet -> Upload page
+        navigate('/upload', { replace: true })
+      }
+    }
+  }, [session, loading, location.pathname, navigate, profile])
+
+  // Global logout handler to ensure state is cleared
+  const handleLogout = async () => {
+    console.log('[App] Global logout triggered')
+    try {
+      await supabase.auth.signOut()
+    } catch (error) {
+      console.error('[App] SignOut error:', error)
+    }
+
+    // Force clear state
+    setSession(null)
+    setProfile(null)
+    mixpanel.reset()
+    navigate('/', { replace: true })
+  }
+
   if (loading) {
     return <LoadingSpinner />
   }
 
-  // We are no longer a "bouncer". We are a "hub".
-  // We ALWAYS render the LandingPage, but we pass it the state.
-  // The LandingPage itself will decide what to show.
-  return (
-    <LandingPage session={session} profile={profile} />
-  )
+  return <Outlet context={{ session, profile, handleLogout }} />
 }
 
 export default App
