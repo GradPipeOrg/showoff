@@ -216,7 +216,7 @@ const ProfilePage = () => {
   const githubScore = profile?.github_score ?? 0
 
   return (
-    <div className="min-h-screen bg-bg-primary px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8">
+    <div className="w-full max-w-7xl mx-auto space-y-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
