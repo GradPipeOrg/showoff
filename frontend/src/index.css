@@ -13,37 +13,18 @@
     color: #f1f5f9;
     /* text-secondary */
 
-    /* Proper centering for all screen sizes */
+    /* Proper full screen layout */
     min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 1rem;
     overflow-x: hidden;
     /* Only prevent horizontal scroll */
   }
 
-  /* Container that centers content */
+  /* Container for the app */
   #root {
     width: 100%;
-    max-width: 100vw;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 0;
-  }
-
-  /* Tablet and desktop */
-  @media (min-width: 768px) {
-    body {
-      padding: 2rem;
-    }
-
-    #root {
-      max-width: 1280px;
-    }
   }
 
   /* Mobile-specific improvements */
@@ -69,13 +50,6 @@
     textarea,
     select {
       font-size: 16px;
-    }
-  }
-
-  /* Extra small screens */
-  @media (max-width: 475px) {
-    body {
-      padding: 0.5rem;
     }
   }
 

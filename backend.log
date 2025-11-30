@@ -1,0 +1,10 @@
+INFO:     Will watch for changes in these directories: ['/home/tec/Documents/Fast/P4/Talk/showoff/backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [22498] using WatchFiles
+INFO:     Started server process [22507]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+--- [API] Job Received for user: b38ac382-c2ca-46d7-9060-c3b36865ee96 ---
+--- [API] File uploaded to: b38ac382-c2ca-46d7-9060-c3b36865ee96/google_resume2.pdf ---
+--- [API] Job sent to Celery/Redis for user: b38ac382-c2ca-46d7-9060-c3b36865ee96 ---
+INFO:     127.0.0.1:32962 - "POST /rank_profile HTTP/1.1" 200 OK

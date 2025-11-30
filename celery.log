@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/home/tec/Documents/Fast/fast/bin/celery", line 8, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home/tec/Documents/Fast/fast/lib/python3.11/site-packages/celery/__main__.py", line 13, in main
+    maybe_patch_concurrency()
+  File "/home/tec/Documents/Fast/fast/lib/python3.11/site-packages/celery/__init__.py", line 140, in maybe_patch_concurrency
+    patcher()
+  File "/home/tec/Documents/Fast/fast/lib/python3.11/site-packages/celery/__init__.py", line 110, in _patch_gevent
+    import gevent.monkey
+ModuleNotFoundError: No module named 'gevent'
